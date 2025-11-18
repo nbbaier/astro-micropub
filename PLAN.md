@@ -43,7 +43,8 @@
 8. [Testing Strategy](#testing-strategy)
 9. [Documentation Requirements](#documentation-requirements)
 10.   [Security Considerations](#security-considerations)
-11.   [Reference Materials](#reference-materials)
+11.   [Required Dependencies](#required-dependencies)
+12.   [Reference Materials](#reference-materials)
 
 ---
 
@@ -1710,6 +1711,35 @@ astro-micropub/
    -  Vercel + Git adapter
    -  SSR with database adapter
    -  Serverless considerations
+
+---
+
+## Required Dependencies
+
+### Production Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `astro-integration-kit` | Toolkit for building type-safe Astro integrations |
+| `zod` | Schema validation for integration options and API inputs |
+| `gray-matter` | Parsing and stringifying frontmatter in the GitAdapter |
+| `slugify` | Generating URL-safe slugs from post titles |
+| `busboy` (or similar) | Handling `multipart/form-data` for the media endpoint (streaming uploads) |
+
+### Development & Peer Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `astro` | The core framework (Peer Dependency) |
+| `typescript` | Language support |
+| `vitest` | Unit testing framework |
+| `playwright` | End-to-end testing for Micropub flows |
+| `@types/node` | Type definitions for Node.js built-ins (needed for `child_process` in GitAdapter) |
+
+### System Requirements (for GitAdapter)
+
+- **Node.js Runtime**: The `GitAdapter` relies on `child_process.execSync` and file system access, requiring a Node.js environment (or compatible runtime like Bun/Deno if supported later).
+- **Git**: The `git` binary must be available in the system PATH for the `GitAdapter` to commit and push changes.
 
 ---
 
