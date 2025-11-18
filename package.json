@@ -1,0 +1,58 @@
+{
+  "name": "astro-micropub",
+  "version": "0.1.0",
+  "description": "A production-ready Micropub resource server integration for Astro",
+  "type": "module",
+  "exports": {
+    ".": "./dist/integration.js",
+    "./storage": "./dist/storage/index.js",
+    "./types": "./dist/types/index.js"
+  },
+  "types": "./dist/integration.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "micropub",
+    "indieweb",
+    "indieauth"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "astro": "^4.0.0 || ^5.0.0"
+  },
+  "dependencies": {
+    "astro-integration-kit": "^0.19.1",
+    "busboy": "^1.6.0",
+    "gray-matter": "^4.0.3",
+    "slugify": "^1.6.6",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/busboy": "^1.5.4",
+    "@types/node": "^20.11.5",
+    "astro": "^5.0.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11",
+    "vitest": "^1.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/astro-micropub.git"
+  }
+}
