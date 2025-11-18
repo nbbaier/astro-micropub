@@ -8,22 +8,24 @@
 
 **Compliance**: Full W3C Micropub specification compliance with IndieAuth token verification.
 
-**Scope for v1.0**: 
-- Micropub endpoint (create, update, delete, query)
-- Media endpoint with streaming uploads
-- Token verification against external IndieAuth token endpoint
-- Pluggable storage adapters (Git-based default for production)
-- Discovery and endpoint configuration
-- Full spec compliance (micropub.rocks testing)
-- CORS support for browser-based clients
-- RFC 6750 compliant authentication
+**Scope for v1.0**:
+
+-  Micropub endpoint (create, update, delete, query)
+-  Media endpoint with streaming uploads
+-  Token verification against external IndieAuth token endpoint
+-  Pluggable storage adapters (Git-based default for production)
+-  Discovery and endpoint configuration
+-  Full spec compliance (micropub.rocks testing)
+-  CORS support for browser-based clients
+-  RFC 6750 compliant authentication
 
 **Out of Scope for v1.0** (deferred to v2.0+):
-- Built-in IndieAuth authorization/token server
-- Syndication implementation (configuration only)
-- Multi-user support
-- Admin UI
-- Webmention integration
+
+-  Built-in IndieAuth authorization/token server
+-  Syndication implementation (configuration only)
+-  Multi-user support
+-  Admin UI
+-  Webmention integration
 
 **Why this scope?**: Building a secure IndieAuth server is complex. v1.0 focuses on being an excellent Micropub resource server that works with existing IndieAuth services (like tokens.indieauth.com) or custom IndieAuth servers.
 
@@ -40,8 +42,8 @@
 7. [File Structure](#file-structure)
 8. [Testing Strategy](#testing-strategy)
 9. [Documentation Requirements](#documentation-requirements)
-10. [Security Considerations](#security-considerations)
-11. [Reference Materials](#reference-materials)
+10.   [Security Considerations](#security-considerations)
+11.   [Reference Materials](#reference-materials)
 
 ---
 
@@ -51,13 +53,13 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Third-Party Clients                         │
-│              (Quill, Indigenous, Micropublish, etc.)             │
+│                      Third-Party Clients                        │
+│              (Quill, Indigenous, Micropublish, etc.)            │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Endpoint Discovery                          │
+│                      Endpoint Discovery                         │
 │         <link rel="micropub" href="/micropub">                  │
 │         <link rel="micropub_media" href="/micropub/media">      │
 │         <link rel="authorization_endpoint" ...> (external)      │
@@ -66,7 +68,7 @@
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              Token Verification (Per-Route)                      │
+│              Token Verification (Per-Route)                     │
 │          - Verify token with external IndieAuth endpoint        │
 │          - Extract me, scope, client_id from verification       │
 │          - Cache verifications briefly (60-120s)                │
@@ -84,8 +86,8 @@
                      │              │         │  com, etc.)  │
                      ▼              ▼         └──────────────┘
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Storage Adapter Layer                        │
-│                    (Pluggable Interface)                         │
+│                     Storage Adapter Layer                       │
+│                    (Pluggable Interface)                        │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
          ┌─────────────┼─────────────┬──────────────┐
@@ -94,7 +96,7 @@
 │     Git      │ │ Database │ │   Dev    │ │    Custom    │
 │   Adapter    │ │ Adapter  │ │    FS    │ │   Adapter    │
 │ (Production) │ │(Postgres)│ │(Dev Only)│ │              │
-│              │ │          │ │ ⚠️ Warns │ │              │
+│              │ │          │ │  ! Warns │ │              │
 └──────┬───────┘ └──────────┘ └──────────┘ └──────────────┘
        │
        ▼
@@ -131,11 +133,11 @@
 
 ### Deferred to v2.0+
 
-- IndieAuth Authorization Server
-- IndieAuth Token Server  
-- Syndication Implementation (POSSE)
-- Multi-user Support
-- Admin UI
+-  IndieAuth Authorization Server
+-  IndieAuth Token Server
+-  Syndication Implementation (POSSE)
+-  Multi-user Support
+-  Admin UI
 
 ---
 
@@ -144,20 +146,23 @@
 **File**: `src/integration.ts`
 
 **Responsibilities**:
-- Define integration using `astro-integration-kit`
-- Parse and validate user configuration
-- Inject Micropub and media routes (NO auth/token routes in v1)
-- Add discovery component or headers
-- Configure Vite for runtime config access
-- Validate external IndieAuth endpoints are configured
+
+-  Define integration using `astro-integration-kit`
+-  Parse and validate user configuration
+-  Inject Micropub and media routes (NO auth/token routes in v1)
+-  Add discovery component or headers
+-  Configure Vite for runtime config access
+-  Validate external IndieAuth endpoints are configured
 
 **Key Hooks**:
-- `astro:config:setup` - Primary setup hook
-  - `injectRoute()` - Add Micropub and media endpoints only
-  - `updateConfig()` - Inject configuration via Vite defines
-  - Optional: Add discovery component to pages
+
+-  `astro:config:setup` - Primary setup hook
+   -  `injectRoute()` - Add Micropub and media endpoints only
+   -  `updateConfig()` - Inject configuration via Vite defines
+   -  Optional: Add discovery component to pages
 
 **Configuration Interface**:
+
 ```typescript
 {
   // Micropub configuration
@@ -168,26 +173,26 @@
     enableDeletes: boolean;                    // Default: true
     syndicationTargets?: SyndicationTarget[];  // Config only (not implemented)
   },
-  
+
   // IndieAuth configuration (EXTERNAL endpoints - REQUIRED)
   indieauth: {
     authorizationEndpoint: string;             // REQUIRED: External auth endpoint URL
     tokenEndpoint: string;                     // REQUIRED: External token endpoint URL
     tokenVerificationCache?: number;           // Cache duration in seconds (default: 120)
   },
-  
+
   // Storage configuration
   storage: {
     adapter: StorageAdapter;                   // Default: GitAdapter
     options: object;                           // Adapter-specific config
   },
-  
+
   // Discovery configuration
   discovery: {
     enabled: boolean;                          // Default: true
     includeHeaders: boolean;                   // Add Link headers (default: true)
   },
-  
+
   // Security configuration
   security: {
     requireScope: boolean;                     // Default: true (strict scope enforcement)
@@ -200,7 +205,7 @@
     },
     sanitizeHtml?: (html: string) => string;   // Optional HTML sanitizer
   },
-  
+
   // Site configuration
   site: {
     me: string;                                // REQUIRED: Site URL (canonical)
@@ -227,100 +232,115 @@
 **Responsibilities**:
 
 #### OPTIONS - CORS Preflight
-- Return CORS headers for browser-based clients
-- `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`
+
+-  Return CORS headers for browser-based clients
+-  `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`
 
 #### GET Requests (Query Endpoint)
+
 1. **Configuration Query** (`q=config`)
-   - Require authentication
-   - Return media endpoint URL (absolute)
-   - Return syndication targets (if configured)
-   - Return supported queries
+
+   -  Require authentication
+   -  Return media endpoint URL (absolute)
+   -  Return syndication targets (if configured)
+   -  Return supported queries
 
 2. **Source Query** (`q=source&url=...`)
-   - Require authentication
-   - Accept **absolute URLs only**
-   - Retrieve post content by URL
-   - Support property filtering (`properties[]=name&properties[]=content`)
-   - Return Microformats2 JSON representation
+
+   -  Require authentication
+   -  Accept **absolute URLs only**
+   -  Retrieve post content by URL
+   -  Support property filtering (`properties[]=name&properties[]=content`)
+   -  Return Microformats2 JSON representation
 
 3. **Syndicate-to Query** (`q=syndicate-to`)
-   - Require authentication
-   - Return list of syndication targets
+   -  Require authentication
+   -  Return list of syndication targets
 
 #### POST Requests (Create/Update/Delete)
 
 1. **Create Posts**
-   - Accept `application/x-www-form-urlencoded` (with bracket notation)
-   - Accept `application/json`
-   - Accept `multipart/form-data` (only if no separate media endpoint)
-   - Validate h-entry vocabulary
-   - Support Micropub-specific properties:
-     - `mp-slug` - Custom slug
-     - `post-status` - draft/published
-     - `visibility` - public/unlisted/private
-     - `mp-photo-alt` - Alt text for photos
-     - `mp-syndicate-to` - Syndication targets
-   - Generate slug (respect `mp-slug`, ensure uniqueness)
-   - Save via storage adapter
-   - Return `201 Created` with **absolute** `Location` header
+
+   -  Accept `application/x-www-form-urlencoded` (with bracket notation)
+   -  Accept `application/json`
+   -  Accept `multipart/form-data` (only if no separate media endpoint)
+   -  Validate h-entry vocabulary
+   -  Support Micropub-specific properties:
+      -  `mp-slug` - Custom slug
+      -  `post-status` - draft/published
+      -  `visibility` - public/unlisted/private
+      -  `mp-photo-alt` - Alt text for photos
+      -  `mp-syndicate-to` - Syndication targets
+   -  Generate slug (respect `mp-slug`, ensure uniqueness)
+   -  Save via storage adapter
+   -  Return `201 Created` with **absolute** `Location` header
 
 2. **Update Posts** (if enabled)
-   - Require `update` scope
-   - Require JSON format per spec
-   - Support operations with correct semantics:
-     - `replace`: `{ "property": ["value1", "value2"] }` - Replace all values
-     - `add`: `{ "property": ["newValue"] }` - Append to existing
-     - `delete`: `["property"]` (entire property) OR `{ "property": ["value"] }` (specific values)
-   - Handle arrays vs scalars correctly
-   - Handle object values with deep equality
-   - Validate `url` parameter (must be absolute)
-   - Apply updates via storage adapter
-   - Return `204 No Content` on success
+
+   -  Require `update` scope
+   -  Require JSON format per spec
+   -  Support operations with correct semantics:
+      -  `replace`: `{ "property": ["value1", "value2"] }` - Replace all values
+      -  `add`: `{ "property": ["newValue"] }` - Append to existing
+      -  `delete`: `["property"]` (entire property) OR `{ "property": ["value"] }` (specific values)
+   -  Handle arrays vs scalars correctly
+   -  Handle object values with deep equality
+   -  Validate `url` parameter (must be absolute)
+   -  Apply updates via storage adapter
+   -  Return `204 No Content` on success
 
 3. **Delete Posts** (if enabled)
-   - Require `delete` scope
-   - Support both form-encoded and JSON
-   - Require `action=delete` and `url`
-   - Soft delete via storage adapter
-   - Return `204 No Content`
+
+   -  Require `delete` scope
+   -  Support both form-encoded and JSON
+   -  Require `action=delete` and `url`
+   -  Soft delete via storage adapter
+   -  Return `204 No Content`
 
 4. **Undelete Posts** (if enabled)
-   - Support `action=undelete` and `url`
-   - Restore via storage adapter
-   - Return `204 No Content`
+   -  Support `action=undelete` and `url`
+   -  Restore via storage adapter
+   -  Return `204 No Content`
 
 **Error Responses** (RFC 6750 compliant):
+
 ```typescript
 // 401 Unauthorized
 return new Response(null, {
-  status: 401,
-  headers: {
-    'WWW-Authenticate': 'Bearer realm="micropub", error="invalid_token"'
-  }
+   status: 401,
+   headers: {
+      "WWW-Authenticate": 'Bearer realm="micropub", error="invalid_token"',
+   },
 });
 
 // 403 Forbidden (insufficient scope)
 return new Response(null, {
-  status: 403,
-  headers: {
-    'WWW-Authenticate': `Bearer realm="micropub", error="insufficient_scope", scope="${requiredScope}"`
-  }
+   status: 403,
+   headers: {
+      "WWW-Authenticate": `Bearer realm="micropub", error="insufficient_scope", scope="${requiredScope}"`,
+   },
 });
 
 // 400 Bad Request (with JSON body)
-return new Response(JSON.stringify({
-  error: "invalid_request",
-  error_description: "Missing required property: content"
-}), {
-  status: 400,
-  headers: { "Content-Type": "application/json" }
-});
+return new Response(
+   JSON.stringify({
+      error: "invalid_request",
+      error_description: "Missing required property: content",
+   }),
+   {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+   }
+);
 ```
 
 **CORS Headers** (all responses):
+
 ```typescript
-headers.set("Access-Control-Allow-Origin", config.security.allowedOrigins[0] || "*");
+headers.set(
+   "Access-Control-Allow-Origin",
+   config.security.allowedOrigins[0] || "*"
+);
 headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
 ```
@@ -336,107 +356,124 @@ headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
 **Supported Methods**: POST, OPTIONS
 
 **Responsibilities**:
-- Accept `multipart/form-data` uploads
-- **Require `media` scope** explicitly (NOT just `create`)
-- **Stream uploads** to storage (don't buffer large files in memory)
-- Validate file types (whitelist: images by default)
-- Enforce size limits (configurable, default 10MB)
-- Generate safe, unique filenames (hash-based recommended)
-- Store files via media storage adapter
-- Return `201 Created` with **absolute** `Location` header
+
+-  Accept `multipart/form-data` uploads
+-  **Require `media` scope** explicitly (NOT just `create`)
+-  **Stream uploads** to storage (don't buffer large files in memory)
+-  Validate file types (whitelist: images by default)
+-  Enforce size limits (configurable, default 10MB)
+-  Generate safe, unique filenames (hash-based recommended)
+-  Store files via media storage adapter
+-  Return `201 Created` with **absolute** `Location` header
 
 **Security Hardening**:
-- Size limits prevent DoS
-- MIME type whitelist prevents malicious uploads
-- Streaming prevents memory exhaustion
-- Safe filename generation prevents path traversal
+
+-  Size limits prevent DoS
+-  MIME type whitelist prevents malicious uploads
+-  Streaming prevents memory exhaustion
+-  Safe filename generation prevents path traversal
 
 **Implementation**:
+
 ```typescript
 export const prerender = false;
 
 export const OPTIONS: APIRoute = async () => {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Authorization, Content-Type"
-    }
-  });
+   return new Response(null, {
+      status: 204,
+      headers: {
+         "Access-Control-Allow-Origin": "*",
+         "Access-Control-Allow-Methods": "POST, OPTIONS",
+         "Access-Control-Allow-Headers": "Authorization, Content-Type",
+      },
+   });
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  // 1. Validate authentication
-  if (!locals.isAuthorized) {
-    return new Response(null, { 
-      status: 401,
+   // 1. Validate authentication
+   if (!locals.isAuthorized) {
+      return new Response(null, {
+         status: 401,
+         headers: {
+            "WWW-Authenticate":
+               'Bearer realm="micropub", error="invalid_token"',
+            "Access-Control-Allow-Origin": "*",
+         },
+      });
+   }
+
+   // 2. Check media scope (STRICT)
+   if (!locals.scopes.includes("media")) {
+      return new Response(null, {
+         status: 403,
+         headers: {
+            "WWW-Authenticate":
+               'Bearer realm="micropub", error="insufficient_scope", scope="media"',
+            "Access-Control-Allow-Origin": "*",
+         },
+      });
+   }
+
+   // 3. Parse multipart (streaming)
+   const formData = await request.formData();
+   const file = formData.get("file") as File;
+
+   if (!file) {
+      return new Response(
+         JSON.stringify({
+            error: "invalid_request",
+            error_description: "No file provided",
+         }),
+         {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+         }
+      );
+   }
+
+   // 4. Validate file size
+   const maxSize = locals.config.security.maxUploadSize || 10 * 1024 * 1024;
+   if (file.size > maxSize) {
+      return new Response(
+         JSON.stringify({
+            error: "invalid_request",
+            error_description: `File exceeds ${maxSize} bytes`,
+         }),
+         { status: 413 }
+      );
+   }
+
+   // 5. Validate file type
+   const allowedTypes = locals.config.security.allowedMimeTypes || [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+   ];
+   if (!allowedTypes.includes(file.type)) {
+      return new Response(
+         JSON.stringify({
+            error: "invalid_request",
+            error_description: `Type ${file.type} not allowed`,
+         }),
+         { status: 415 }
+      );
+   }
+
+   // 6. Generate safe filename (hash-based)
+   const filename = await generateSafeFilename(file);
+
+   // 7. Stream to storage (no memory buffering)
+   const absoluteUrl = await locals.mediaStorage.saveFile(file, filename);
+
+   // 8. Return absolute URL
+   return new Response(null, {
+      status: 201,
       headers: {
-        'WWW-Authenticate': 'Bearer realm="micropub", error="invalid_token"',
-        "Access-Control-Allow-Origin": "*"
-      }
-    });
-  }
-
-  // 2. Check media scope (STRICT)
-  if (!locals.scopes.includes("media")) {
-    return new Response(null, { 
-      status: 403,
-      headers: {
-        'WWW-Authenticate': 'Bearer realm="micropub", error="insufficient_scope", scope="media"',
-        "Access-Control-Allow-Origin": "*"
-      }
-    });
-  }
-
-  // 3. Parse multipart (streaming)
-  const formData = await request.formData();
-  const file = formData.get("file") as File;
-
-  if (!file) {
-    return new Response(JSON.stringify({
-      error: "invalid_request",
-      error_description: "No file provided"
-    }), { 
-      status: 400,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-
-  // 4. Validate file size
-  const maxSize = locals.config.security.maxUploadSize || 10 * 1024 * 1024;
-  if (file.size > maxSize) {
-    return new Response(JSON.stringify({
-      error: "invalid_request",
-      error_description: `File exceeds ${maxSize} bytes`
-    }), { status: 413 });
-  }
-
-  // 5. Validate file type
-  const allowedTypes = locals.config.security.allowedMimeTypes || [
-    "image/jpeg", "image/png", "image/gif", "image/webp"
-  ];
-  if (!allowedTypes.includes(file.type)) {
-    return new Response(JSON.stringify({
-      error: "invalid_request",
-      error_description: `Type ${file.type} not allowed`
-    }), { status: 415 });
-  }
-
-  // 6. Generate safe filename (hash-based)
-  const filename = await generateSafeFilename(file);
-
-  // 7. Stream to storage (no memory buffering)
-  const absoluteUrl = await locals.mediaStorage.saveFile(file, filename);
-
-  // 8. Return absolute URL
-  return new Response(null, {
-    status: 201,
-    headers: {
-      "Location": absoluteUrl,
-      "Access-Control-Allow-Origin": "*"
-    }
-  });
+         Location: absoluteUrl,
+         "Access-Control-Allow-Origin": "*",
+      },
+   });
 };
 ```
 
@@ -461,105 +498,109 @@ Per the IndieAuth spec, Micropub servers verify tokens by making a request to th
 5. Populate route locals with auth data
 
 **Implementation**:
+
 ```typescript
 // src/lib/token-verification.ts
 
 interface TokenVerificationResult {
-  active: boolean;
-  me: string;
-  client_id: string;
-  scope: string;
-  exp?: number;
+   active: boolean;
+   me: string;
+   client_id: string;
+   scope: string;
+   exp?: number;
 }
 
 const tokenCache = new Map<string, TokenVerificationResult>();
 
 export async function verifyToken(
-  token: string, 
-  tokenEndpoint: string
+   token: string,
+   tokenEndpoint: string
 ): Promise<TokenVerificationResult | null> {
-  // Check cache
-  const cached = tokenCache.get(token);
-  if (cached && (!cached.exp || cached.exp > Date.now() / 1000)) {
-    return cached;
-  }
+   // Check cache
+   const cached = tokenCache.get(token);
+   if (cached && (!cached.exp || cached.exp > Date.now() / 1000)) {
+      return cached;
+   }
 
-  // Verify with IndieAuth token endpoint
-  try {
-    const response = await fetch(tokenEndpoint, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json"
+   // Verify with IndieAuth token endpoint
+   try {
+      const response = await fetch(tokenEndpoint, {
+         method: "GET",
+         headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+         },
+      });
+
+      if (!response.ok) {
+         return null;
       }
-    });
 
-    if (!response.ok) {
+      const data = await response.json();
+
+      const result: TokenVerificationResult = {
+         active: true,
+         me: data.me,
+         client_id: data.client_id,
+         scope: data.scope,
+         exp: data.exp,
+      };
+
+      // Cache for 120 seconds
+      tokenCache.set(token, result);
+      setTimeout(() => tokenCache.delete(token), 120 * 1000);
+
+      return result;
+   } catch (error) {
+      console.error("Token verification failed:", error);
       return null;
-    }
-
-    const data = await response.json();
-
-    const result: TokenVerificationResult = {
-      active: true,
-      me: data.me,
-      client_id: data.client_id,
-      scope: data.scope,
-      exp: data.exp
-    };
-
-    // Cache for 120 seconds
-    tokenCache.set(token, result);
-    setTimeout(() => tokenCache.delete(token), 120 * 1000);
-
-    return result;
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    return null;
-  }
+   }
 }
 
 export function extractToken(request: Request): string | null {
-  // From Authorization header
-  const authHeader = request.headers.get("authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    return authHeader.substring(7);
-  }
-  
-  // From form body (for form-encoded requests)
-  // Note: Must clone request if body will be read again later
-  return null;
+   // From Authorization header
+   const authHeader = request.headers.get("authorization");
+   if (authHeader?.startsWith("Bearer ")) {
+      return authHeader.substring(7);
+   }
+
+   // From form body (for form-encoded requests)
+   // Note: Must clone request if body will be read again later
+   return null;
 }
 ```
 
 **Usage in API Routes**:
+
 ```typescript
 // In Micropub/Media endpoints
 const token = extractToken(request);
 if (!token) {
-  return new Response(null, {
-    status: 401,
-    headers: { 'WWW-Authenticate': 'Bearer realm="micropub"' }
-  });
+   return new Response(null, {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Bearer realm="micropub"' },
+   });
 }
 
 const verification = await verifyToken(token, config.indieauth.tokenEndpoint);
 
 if (!verification) {
-  return new Response(null, {
-    status: 401,
-    headers: { 'WWW-Authenticate': 'Bearer realm="micropub", error="invalid_token"' }
-  });
+   return new Response(null, {
+      status: 401,
+      headers: {
+         "WWW-Authenticate": 'Bearer realm="micropub", error="invalid_token"',
+      },
+   });
 }
 
 // Check scope
 if (!verification.scope.split(" ").includes(requiredScope)) {
-  return new Response(null, {
-    status: 403,
-    headers: { 
-      'WWW-Authenticate': `Bearer realm="micropub", error="insufficient_scope", scope="${requiredScope}"`
-    }
-  });
+   return new Response(null, {
+      status: 403,
+      headers: {
+         "WWW-Authenticate": `Bearer realm="micropub", error="insufficient_scope", scope="${requiredScope}"`,
+      },
+   });
 }
 
 // Populate locals
@@ -580,6 +621,7 @@ locals.scopes = verification.scope.split(" ");
 **Usage**: Manual inclusion in layouts OR automatic injection (optional)
 
 **Component**:
+
 ```astro
 ---
 // src/components/MicropubDiscovery.astro
@@ -590,7 +632,7 @@ interface Props {
   tokenEndpoint: string;          // REQUIRED: external
 }
 
-const { 
+const {
   micropubEndpoint = "/micropub",
   mediaEndpoint = "/micropub/media",
   authorizationEndpoint,
@@ -610,14 +652,18 @@ const absoluteMedia = new URL(mediaEndpoint, siteUrl).toString();
 ```
 
 **HTTP Link Headers** (added to responses):
+
 ```typescript
 // In Micropub endpoint responses
-headers.set("Link", [
-  `<${absoluteMicropubUrl}>; rel="micropub"`,
-  `<${absoluteMediaUrl}>; rel="micropub_media"`,
-  `<${config.indieauth.authorizationEndpoint}>; rel="authorization_endpoint"`,
-  `<${config.indieauth.tokenEndpoint}>; rel="token_endpoint"`
-].join(", "));
+headers.set(
+   "Link",
+   [
+      `<${absoluteMicropubUrl}>; rel="micropub"`,
+      `<${absoluteMediaUrl}>; rel="micropub_media"`,
+      `<${config.indieauth.authorizationEndpoint}>; rel="authorization_endpoint"`,
+      `<${config.indieauth.tokenEndpoint}>; rel="token_endpoint"`,
+   ].join(", ")
+);
 ```
 
 ---
@@ -633,47 +679,53 @@ headers.set("Link", [
  * Microformats2 entry representation
  */
 export interface MicroformatsEntry {
-  type: string[];
-  properties: {
-    [key: string]: any[];
-  };
+   type: string[];
+   properties: {
+      [key: string]: any[];
+   };
 }
 
 /**
  * Update operation types (spec-compliant)
  */
-export type UpdateOperation = 
-  | { action: "replace"; property: string; value: any[] }
-  | { action: "add"; property: string; value: any[] }
-  | { action: "delete"; property: string; value?: any[] };
+export type UpdateOperation =
+   | { action: "replace"; property: string; value: any[] }
+   | { action: "add"; property: string; value: any[] }
+   | { action: "delete"; property: string; value?: any[] };
 
 /**
  * Post metadata returned by storage
  */
 export interface PostMetadata {
-  url: string;          // MUST be absolute
-  published: Date;
-  modified?: Date;
-  deleted?: boolean;
+   url: string; // MUST be absolute
+   published: Date;
+   modified?: Date;
+   deleted?: boolean;
 }
 
 /**
  * Core storage adapter interface
  */
 export interface MicropubStorageAdapter {
-  createPost(entry: MicroformatsEntry): Promise<PostMetadata>;
-  getPost(url: string, properties?: string[]): Promise<MicroformatsEntry | null>;
-  updatePost(url: string, operations: UpdateOperation[]): Promise<PostMetadata>;
-  deletePost(url: string): Promise<void>;
-  undeletePost(url: string): Promise<void>;
+   createPost(entry: MicroformatsEntry): Promise<PostMetadata>;
+   getPost(
+      url: string,
+      properties?: string[]
+   ): Promise<MicroformatsEntry | null>;
+   updatePost(
+      url: string,
+      operations: UpdateOperation[]
+   ): Promise<PostMetadata>;
+   deletePost(url: string): Promise<void>;
+   undeletePost(url: string): Promise<void>;
 }
 
 /**
  * Media storage adapter interface
  */
 export interface MediaStorageAdapter {
-  saveFile(file: File, filename: string): Promise<string>; // Returns absolute URL
-  deleteFile(url: string): Promise<void>;
+   saveFile(file: File, filename: string): Promise<string>; // Returns absolute URL
+   deleteFile(url: string): Promise<void>;
 }
 ```
 
@@ -686,185 +738,208 @@ export interface MediaStorageAdapter {
 **Why Git?**: Matches how Astro sites are deployed (static hosting with git-based continuous deployment).
 
 **Strategy**:
-- Write files to content directory (e.g., `src/content/posts/`)
-- Commit changes to git repository
-- Optionally push to remote
-- Optionally trigger deploy hook (Netlify, Vercel, etc.)
-- Content appears after build completes
-- Works with serverless/static deployments
-- Preserves full MF2 data in frontmatter
+
+-  Write files to content directory (e.g., `src/content/posts/`)
+-  Commit changes to git repository
+-  Optionally push to remote
+-  Optionally trigger deploy hook (Netlify, Vercel, etc.)
+-  Content appears after build completes
+-  Works with serverless/static deployments
+-  Preserves full MF2 data in frontmatter
 
 **Implementation Highlights**:
+
 ```typescript
 export interface GitAdapterOptions {
-  contentDir?: string;           // Default: "src/content/posts"
-  mediaDir?: string;             // Default: "public/media"
-  branch?: string;               // Default: current branch
-  commitMessage?: string;        // Template: "New post: {title}"
-  authorName?: string;           // Git commit author
-  authorEmail?: string;          // Git commit email
-  autoPush?: boolean;            // Default: true
-  deployHook?: string;           // Webhook URL to trigger build
-  deployHookMethod?: string;     // Default: "POST"
-  siteUrl: string;               // For absolute URLs (REQUIRED)
+   contentDir?: string; // Default: "src/content/posts"
+   mediaDir?: string; // Default: "public/media"
+   branch?: string; // Default: current branch
+   commitMessage?: string; // Template: "New post: {title}"
+   authorName?: string; // Git commit author
+   authorEmail?: string; // Git commit email
+   autoPush?: boolean; // Default: true
+   deployHook?: string; // Webhook URL to trigger build
+   deployHookMethod?: string; // Default: "POST"
+   siteUrl: string; // For absolute URLs (REQUIRED)
 }
 
 export class GitAdapter implements MicropubStorageAdapter {
-  async createPost(entry: MicroformatsEntry): Promise<PostMetadata> {
-    // 1. Generate slug (respect mp-slug)
-    const customSlug = entry.properties["mp-slug"]?.[0];
-    const slug = customSlug || this.generateSlug(entry);
-    const uniqueSlug = await this.ensureUniqueSlug(slug);
-    
-    // 2. Convert to Markdown (preserve HTML, handle alt text)
-    const { frontmatter, content } = this.convertToMarkdown(entry);
-    
-    // 3. Write file
-    const filename = `${uniqueSlug}.md`;
-    const filePath = join(this.contentDir, filename);
-    const fileContent = matter.stringify(content, frontmatter);
-    await writeFile(filePath, fileContent, "utf-8");
-    
-    // 4. Git commit
-    await this.gitCommit(filename, `New post: ${frontmatter.name || uniqueSlug}`);
-    
-    // 5. Trigger deploy
-    if (this.options.deployHook) {
-      await this.triggerDeploy();
-    }
-    
-    // 6. Return ABSOLUTE URL
-    const absoluteUrl = new URL(`/posts/${uniqueSlug}`, this.options.siteUrl).toString();
-    
-    return {
-      url: absoluteUrl,
-      published: new Date(frontmatter.published)
-    };
-  }
-  
-  private async gitCommit(filename: string, message: string): Promise<void> {
-    const filePath = join(this.contentDir, filename);
-    
-    execSync(`git add "${filePath}"`, { stdio: "ignore" });
-    
-    const gitConfig = [];
-    if (this.options.authorName) {
-      gitConfig.push(`-c user.name="${this.options.authorName}"`);
-    }
-    if (this.options.authorEmail) {
-      gitConfig.push(`-c user.email="${this.options.authorEmail}"`);
-    }
-    
-    execSync(`git ${gitConfig.join(" ")} commit -m "${message}"`, { stdio: "ignore" });
-    
-    if (this.options.autoPush !== false) {
-      execSync("git push", { stdio: "ignore" });
-    }
-  }
-  
-  private async triggerDeploy(): Promise<void> {
-    if (!this.options.deployHook) return;
-    
-    await fetch(this.options.deployHook, {
-      method: this.options.deployHookMethod || "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        source: "astro-micropub",
-        timestamp: new Date().toISOString()
-      })
-    });
-  }
-  
-  private convertToMarkdown(entry: MicroformatsEntry): { frontmatter: any; content: string } {
-    const frontmatter: any = {
-      type: entry.type[0],
-      published: entry.properties.published?.[0] || new Date().toISOString(),
-    };
+   async createPost(entry: MicroformatsEntry): Promise<PostMetadata> {
+      // 1. Generate slug (respect mp-slug)
+      const customSlug = entry.properties["mp-slug"]?.[0];
+      const slug = customSlug || this.generateSlug(entry);
+      const uniqueSlug = await this.ensureUniqueSlug(slug);
 
-    let content = "";
+      // 2. Convert to Markdown (preserve HTML, handle alt text)
+      const { frontmatter, content } = this.convertToMarkdown(entry);
 
-    // Preserve HTML if provided (don't auto-convert)
-    if (entry.properties.content) {
-      const contentValue = entry.properties.content[0];
-      if (typeof contentValue === "string") {
-        content = contentValue;
-      } else if (contentValue.markdown) {
-        content = contentValue.markdown;
-        if (contentValue.html) {
-          frontmatter.content_html = contentValue.html;
-        }
-      } else if (contentValue.html) {
-        frontmatter.content_html = contentValue.html;
-        content = contentValue.value || "";
-      } else if (contentValue.value) {
-        content = contentValue.value;
+      // 3. Write file
+      const filename = `${uniqueSlug}.md`;
+      const filePath = join(this.contentDir, filename);
+      const fileContent = matter.stringify(content, frontmatter);
+      await writeFile(filePath, fileContent, "utf-8");
+
+      // 4. Git commit
+      await this.gitCommit(
+         filename,
+         `New post: ${frontmatter.name || uniqueSlug}`
+      );
+
+      // 5. Trigger deploy
+      if (this.options.deployHook) {
+         await this.triggerDeploy();
       }
-    }
 
-    // Handle photos with alt text
-    if (entry.properties.photo) {
-      const photos = entry.properties.photo;
-      const alts = entry.properties["mp-photo-alt"] || [];
-      frontmatter.photo = photos.map((url: string, i: number) => ({
-        url,
-        alt: alts[i] || ""
-      }));
-    }
+      // 6. Return ABSOLUTE URL
+      const absoluteUrl = new URL(
+         `/posts/${uniqueSlug}`,
+         this.options.siteUrl
+      ).toString();
 
-    // Handle post-status
-    if (entry.properties["post-status"]?.[0] === "draft") {
-      frontmatter.draft = true;
-    }
+      return {
+         url: absoluteUrl,
+         published: new Date(frontmatter.published),
+      };
+   }
 
-    // Handle visibility
-    if (entry.properties.visibility) {
-      frontmatter.visibility = entry.properties.visibility[0];
-    }
+   private async gitCommit(filename: string, message: string): Promise<void> {
+      const filePath = join(this.contentDir, filename);
 
-    // Map other properties (skip mp-* internals)
-    const skip = ["content", "published", "photo", "mp-photo-alt", "mp-slug", "post-status", "visibility"];
-    for (const [key, values] of Object.entries(entry.properties)) {
-      if (!skip.includes(key) && !key.startsWith("mp-")) {
-        frontmatter[key] = values.length === 1 ? values[0] : values;
+      execSync(`git add "${filePath}"`, { stdio: "ignore" });
+
+      const gitConfig = [];
+      if (this.options.authorName) {
+         gitConfig.push(`-c user.name="${this.options.authorName}"`);
       }
-    }
+      if (this.options.authorEmail) {
+         gitConfig.push(`-c user.email="${this.options.authorEmail}"`);
+      }
 
-    return { frontmatter, content };
-  }
-  
-  private applyOperation(data: any, op: UpdateOperation): void {
-    switch (op.action) {
-      case "replace":
-        data[op.property] = op.value;
-        break;
-      case "add":
-        if (!data[op.property]) data[op.property] = [];
-        if (!Array.isArray(data[op.property])) {
-          data[op.property] = [data[op.property]];
-        }
-        data[op.property].push(...op.value);
-        break;
-      case "delete":
-        if (op.value && op.value.length > 0) {
-          // Delete specific values (deep equality)
-          if (!Array.isArray(data[op.property])) {
-            data[op.property] = [data[op.property]];
-          }
-          data[op.property] = data[op.property].filter(
-            (v: any) => !op.value!.some(deleteVal => 
-              JSON.stringify(v) === JSON.stringify(deleteVal)
-            )
-          );
-          if (data[op.property].length === 0) {
-            delete data[op.property];
-          }
-        } else {
-          // Delete entire property
-          delete data[op.property];
-        }
-        break;
-    }
-  }
+      execSync(`git ${gitConfig.join(" ")} commit -m "${message}"`, {
+         stdio: "ignore",
+      });
+
+      if (this.options.autoPush !== false) {
+         execSync("git push", { stdio: "ignore" });
+      }
+   }
+
+   private async triggerDeploy(): Promise<void> {
+      if (!this.options.deployHook) return;
+
+      await fetch(this.options.deployHook, {
+         method: this.options.deployHookMethod || "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+            source: "astro-micropub",
+            timestamp: new Date().toISOString(),
+         }),
+      });
+   }
+
+   private convertToMarkdown(entry: MicroformatsEntry): {
+      frontmatter: any;
+      content: string;
+   } {
+      const frontmatter: any = {
+         type: entry.type[0],
+         published: entry.properties.published?.[0] || new Date().toISOString(),
+      };
+
+      let content = "";
+
+      // Preserve HTML if provided (don't auto-convert)
+      if (entry.properties.content) {
+         const contentValue = entry.properties.content[0];
+         if (typeof contentValue === "string") {
+            content = contentValue;
+         } else if (contentValue.markdown) {
+            content = contentValue.markdown;
+            if (contentValue.html) {
+               frontmatter.content_html = contentValue.html;
+            }
+         } else if (contentValue.html) {
+            frontmatter.content_html = contentValue.html;
+            content = contentValue.value || "";
+         } else if (contentValue.value) {
+            content = contentValue.value;
+         }
+      }
+
+      // Handle photos with alt text
+      if (entry.properties.photo) {
+         const photos = entry.properties.photo;
+         const alts = entry.properties["mp-photo-alt"] || [];
+         frontmatter.photo = photos.map((url: string, i: number) => ({
+            url,
+            alt: alts[i] || "",
+         }));
+      }
+
+      // Handle post-status
+      if (entry.properties["post-status"]?.[0] === "draft") {
+         frontmatter.draft = true;
+      }
+
+      // Handle visibility
+      if (entry.properties.visibility) {
+         frontmatter.visibility = entry.properties.visibility[0];
+      }
+
+      // Map other properties (skip mp-* internals)
+      const skip = [
+         "content",
+         "published",
+         "photo",
+         "mp-photo-alt",
+         "mp-slug",
+         "post-status",
+         "visibility",
+      ];
+      for (const [key, values] of Object.entries(entry.properties)) {
+         if (!skip.includes(key) && !key.startsWith("mp-")) {
+            frontmatter[key] = values.length === 1 ? values[0] : values;
+         }
+      }
+
+      return { frontmatter, content };
+   }
+
+   private applyOperation(data: any, op: UpdateOperation): void {
+      switch (op.action) {
+         case "replace":
+            data[op.property] = op.value;
+            break;
+         case "add":
+            if (!data[op.property]) data[op.property] = [];
+            if (!Array.isArray(data[op.property])) {
+               data[op.property] = [data[op.property]];
+            }
+            data[op.property].push(...op.value);
+            break;
+         case "delete":
+            if (op.value && op.value.length > 0) {
+               // Delete specific values (deep equality)
+               if (!Array.isArray(data[op.property])) {
+                  data[op.property] = [data[op.property]];
+               }
+               data[op.property] = data[op.property].filter(
+                  (v: any) =>
+                     !op.value!.some(
+                        (deleteVal) =>
+                           JSON.stringify(v) === JSON.stringify(deleteVal)
+                     )
+               );
+               if (data[op.property].length === 0) {
+                  delete data[op.property];
+               }
+            } else {
+               // Delete entire property
+               delete data[op.property];
+            }
+            break;
+      }
+   }
 }
 ```
 
@@ -880,18 +955,18 @@ export class GitAdapter implements MicropubStorageAdapter {
 
 ```typescript
 export class DevFSAdapter implements MicropubStorageAdapter {
-  constructor(options: { contentDir: string }) {
-    // Warn in production
-    if (process.env.NODE_ENV === "production" || isServerless()) {
-      console.warn(
-        "\n⚠️  WARNING: DevFSAdapter is NOT suitable for production!\n" +
-        "   Files will be lost on serverless platforms.\n" +
-        "   Use GitAdapter or DatabaseAdapter instead.\n"
-      );
-    }
-  }
-  
-  // Simple file operations without git commits
+   constructor(options: { contentDir: string }) {
+      // Warn in production
+      if (process.env.NODE_ENV === "production" || isServerless()) {
+         console.warn(
+            "\n⚠️  WARNING: DevFSAdapter is NOT suitable for production!\n" +
+               "   Files will be lost on serverless platforms.\n" +
+               "   Use GitAdapter or DatabaseAdapter instead.\n"
+         );
+      }
+   }
+
+   // Simple file operations without git commits
 }
 ```
 
@@ -903,29 +978,33 @@ export class DevFSAdapter implements MicropubStorageAdapter {
 
 ```typescript
 export class DatabaseAdapter implements MicropubStorageAdapter {
-  async createPost(entry: MicroformatsEntry): Promise<PostMetadata> {
-    const slug = await this.generateUniqueSlug(entry);
-    
-    await this.db.query(`
+   async createPost(entry: MicroformatsEntry): Promise<PostMetadata> {
+      const slug = await this.generateUniqueSlug(entry);
+
+      await this.db.query(
+         `
       INSERT INTO micropub_posts (id, slug, type, properties, published)
       VALUES ($1, $2, $3, $4, $5)
-    `, [
-      generateId(),
-      slug,
-      entry.type[0],
-      JSON.stringify(entry.properties), // Store full MF2 JSON
-      new Date(entry.properties.published?.[0] || Date.now())
-    ]);
-    
-    return {
-      url: new URL(`/posts/${slug}`, this.options.siteUrl).toString(),
-      published: new Date()
-    };
-  }
+    `,
+         [
+            generateId(),
+            slug,
+            entry.type[0],
+            JSON.stringify(entry.properties), // Store full MF2 JSON
+            new Date(entry.properties.published?.[0] || Date.now()),
+         ]
+      );
+
+      return {
+         url: new URL(`/posts/${slug}`, this.options.siteUrl).toString(),
+         published: new Date(),
+      };
+   }
 }
 ```
 
 **Schema**:
+
 ```sql
 CREATE TABLE micropub_posts (
   id UUID PRIMARY KEY,
@@ -949,6 +1028,7 @@ CREATE INDEX idx_slug ON micropub_posts(slug);
 #### Create Post (form-encoded)
 
 **Request**:
+
 ```http
 POST /micropub HTTP/1.1
 Host: example.com
@@ -959,6 +1039,7 @@ h=entry&content=Hello+World&category[]=indieweb&category[]=test&mp-slug=hello
 ```
 
 **Response**:
+
 ```http
 HTTP/1.1 201 Created
 Location: https://example.com/posts/hello
@@ -968,6 +1049,7 @@ Access-Control-Allow-Origin: *
 #### Create Post (JSON)
 
 **Request**:
+
 ```http
 POST /micropub HTTP/1.1
 Host: example.com
@@ -987,6 +1069,7 @@ Content-Type: application/json
 ```
 
 **Response**:
+
 ```http
 HTTP/1.1 201 Created
 Location: https://example.com/posts/my-post
@@ -996,6 +1079,7 @@ Access-Control-Allow-Origin: *
 #### Update Post (spec-compliant)
 
 **Request**:
+
 ```http
 POST /micropub HTTP/1.1
 Host: example.com
@@ -1016,6 +1100,7 @@ Content-Type: application/json
 ```
 
 **Response**:
+
 ```http
 HTTP/1.1 204 No Content
 Access-Control-Allow-Origin: *
@@ -1024,6 +1109,7 @@ Access-Control-Allow-Origin: *
 #### Delete Post
 
 **Request**:
+
 ```http
 POST /micropub HTTP/1.1
 Host: example.com
@@ -1037,6 +1123,7 @@ Content-Type: application/json
 ```
 
 **Response**:
+
 ```http
 HTTP/1.1 204 No Content
 ```
@@ -1044,6 +1131,7 @@ HTTP/1.1 204 No Content
 #### Query Config
 
 **Request**:
+
 ```http
 GET /micropub?q=config HTTP/1.1
 Host: example.com
@@ -1051,6 +1139,7 @@ Authorization: Bearer xxxxx
 ```
 
 **Response**:
+
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -1069,6 +1158,7 @@ Content-Type: application/json
 #### Query Source
 
 **Request**:
+
 ```http
 GET /micropub?q=source&url=https://example.com/posts/my-post&properties[]=name&properties[]=content HTTP/1.1
 Host: example.com
@@ -1076,6 +1166,7 @@ Authorization: Bearer xxxxx
 ```
 
 **Response**:
+
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -1094,6 +1185,7 @@ Content-Type: application/json
 ### Media Endpoint
 
 **Request**:
+
 ```http
 POST /micropub/media HTTP/1.1
 Host: example.com
@@ -1109,6 +1201,7 @@ Content-Type: image/jpeg
 ```
 
 **Response**:
+
 ```http
 HTTP/1.1 201 Created
 Location: https://example.com/media/2025/01/abc123-photo.jpg
@@ -1123,68 +1216,76 @@ Access-Control-Allow-Origin: *
 
 ```typescript
 // astro.config.mjs
-import { defineConfig } from 'astro/config';
-import micropub from 'astro-micropub';
-import { GitAdapter } from 'astro-micropub/storage';
+import { defineConfig } from "astro/config";
+import micropub from "astro-micropub";
+import { GitAdapter } from "astro-micropub/storage";
 
 export default defineConfig({
-  site: "https://example.com", // REQUIRED
-  
-  integrations: [
-    micropub({
-      micropub: {
-        endpoint: "/micropub",
-        mediaEndpoint: "/micropub/media",
-        enableUpdates: true,
-        enableDeletes: true,
-        syndicationTargets: [
-          { uid: "https://twitter.com/user", name: "Twitter" }
-        ]
-      },
+   site: "https://example.com", // REQUIRED
 
-      // EXTERNAL IndieAuth endpoints (REQUIRED)
-      indieauth: {
-        authorizationEndpoint: "https://indieauth.com/auth",
-        tokenEndpoint: "https://tokens.indieauth.com/token",
-        tokenVerificationCache: 120
-      },
+   integrations: [
+      micropub({
+         micropub: {
+            endpoint: "/micropub",
+            mediaEndpoint: "/micropub/media",
+            enableUpdates: true,
+            enableDeletes: true,
+            syndicationTargets: [
+               { uid: "https://twitter.com/user", name: "Twitter" },
+            ],
+         },
 
-      storage: {
-        adapter: new GitAdapter({
-          contentDir: "src/content/posts",
-          authorName: "Micropub Bot",
-          authorEmail: "bot@example.com",
-          deployHook: process.env.NETLIFY_BUILD_HOOK,
-          siteUrl: "https://example.com"
-        })
-      },
+         // EXTERNAL IndieAuth endpoints (REQUIRED)
+         indieauth: {
+            authorizationEndpoint: "https://indieauth.com/auth",
+            tokenEndpoint: "https://tokens.indieauth.com/token",
+            tokenVerificationCache: 120,
+         },
 
-      discovery: {
-        enabled: true,
-        includeHeaders: true
-      },
+         storage: {
+            adapter: new GitAdapter({
+               contentDir: "src/content/posts",
+               authorName: "Micropub Bot",
+               authorEmail: "bot@example.com",
+               deployHook: process.env.NETLIFY_BUILD_HOOK,
+               siteUrl: "https://example.com",
+            }),
+         },
 
-      security: {
-        requireScope: true,
-        allowedOrigins: ["https://quill.p3k.io", "https://indigenous.realize.be"],
-        maxUploadSize: 10 * 1024 * 1024,
-        allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
-        rateLimit: {
-          windowMs: 15 * 60 * 1000,
-          maxRequests: 100
-        }
-      },
+         discovery: {
+            enabled: true,
+            includeHeaders: true,
+         },
 
-      site: {
-        me: "https://example.com/",
-        name: "My Blog",
-        author: {
-          name: "John Doe",
-          url: "https://example.com/"
-        }
-      }
-    })
-  ]
+         security: {
+            requireScope: true,
+            allowedOrigins: [
+               "https://quill.p3k.io",
+               "https://indigenous.realize.be",
+            ],
+            maxUploadSize: 10 * 1024 * 1024,
+            allowedMimeTypes: [
+               "image/jpeg",
+               "image/png",
+               "image/gif",
+               "image/webp",
+            ],
+            rateLimit: {
+               windowMs: 15 * 60 * 1000,
+               maxRequests: 100,
+            },
+         },
+
+         site: {
+            me: "https://example.com/",
+            name: "My Blog",
+            author: {
+               name: "John Doe",
+               url: "https://example.com/",
+            },
+         },
+      }),
+   ],
 });
 ```
 
@@ -1197,6 +1298,7 @@ export default defineConfig({
 **Goal**: Project structure and storage layer
 
 **Tasks**:
+
 1. Set up project structure and TypeScript config
 2. Define storage adapter interfaces
 3. Implement GitAdapter with commit + deploy hooks
@@ -1206,11 +1308,12 @@ export default defineConfig({
 7. Validate external IndieAuth endpoints in config
 
 **Deliverables**:
-- Storage interfaces
-- GitAdapter (production-ready)
-- DevFSAdapter (dev-only)
-- Integration skeleton
-- Config validation
+
+-  Storage interfaces
+-  GitAdapter (production-ready)
+-  DevFSAdapter (dev-only)
+-  Integration skeleton
+-  Config validation
 
 ---
 
@@ -1219,6 +1322,7 @@ export default defineConfig({
 **Goal**: Basic create endpoint
 
 **Tasks**:
+
 1. Implement POST /micropub endpoint
 2. Form-encoded parser (bracket notation support)
 3. JSON parser
@@ -1230,10 +1334,11 @@ export default defineConfig({
 9. Route injection
 
 **Deliverables**:
-- Working POST /micropub
-- Form, JSON, multipart support
-- Spec-compliant errors
-- CORS headers
+
+-  Working POST /micropub
+-  Form, JSON, multipart support
+-  Spec-compliant errors
+-  CORS headers
 
 ---
 
@@ -1242,6 +1347,7 @@ export default defineConfig({
 **Goal**: Authenticate requests via external IndieAuth
 
 **Tasks**:
+
 1. Implement token extraction (header + form body)
 2. Implement verification HTTP request
 3. Parse verification response (me, scope, client_id)
@@ -1251,10 +1357,11 @@ export default defineConfig({
 7. Test with tokens.indieauth.com
 
 **Deliverables**:
-- Token verification library
-- Caching
-- Scope enforcement
-- Integration with routes
+
+-  Token verification library
+-  Caching
+-  Scope enforcement
+-  Integration with routes
 
 ---
 
@@ -1263,6 +1370,7 @@ export default defineConfig({
 **Goal**: Query endpoints
 
 **Tasks**:
+
 1. GET /micropub handler
 2. Config query (q=config)
 3. Source query (q=source) with absolute URL validation
@@ -1271,9 +1379,10 @@ export default defineConfig({
 6. Authentication on queries
 
 **Deliverables**:
-- q=config
-- q=source with filtering
-- q=syndicate-to
+
+-  q=config
+-  q=source with filtering
+-  q=syndicate-to
 
 ---
 
@@ -1282,6 +1391,7 @@ export default defineConfig({
 **Goal**: Spec-compliant update/delete
 
 **Tasks**:
+
 1. Update action handler
 2. Replace operations
 3. Add operations
@@ -1291,12 +1401,13 @@ export default defineConfig({
 7. Delete action (soft delete)
 8. Undelete action
 9. Strict scope checking
-10. Unit tests for update semantics
+10.   Unit tests for update semantics
 
 **Deliverables**:
-- action=update (spec-compliant)
-- action=delete/undelete
-- Comprehensive tests
+
+-  action=update (spec-compliant)
+-  action=delete/undelete
+-  Comprehensive tests
 
 ---
 
@@ -1305,6 +1416,7 @@ export default defineConfig({
 **Goal**: Secure media uploads
 
 **Tasks**:
+
 1. Media endpoint route
 2. Streaming multipart parser
 3. File type validation
@@ -1314,12 +1426,13 @@ export default defineConfig({
 7. Optional S3/R2 adapter
 8. Require "media" scope
 9. Absolute URLs
-10. Update config query
+10.   Update config query
 
 **Deliverables**:
-- POST /micropub/media
-- Streaming uploads
-- Security hardening
+
+-  POST /micropub/media
+-  Streaming uploads
+-  Security hardening
 
 ---
 
@@ -1328,6 +1441,7 @@ export default defineConfig({
 **Goal**: Micropub-specific properties
 
 **Tasks**:
+
 1. mp-slug handling
 2. post-status (draft/published)
 3. visibility
@@ -1337,8 +1451,9 @@ export default defineConfig({
 7. Documentation
 
 **Deliverables**:
-- Support for mp-* properties
-- Examples
+
+-  Support for mp-\* properties
+-  Examples
 
 ---
 
@@ -1347,6 +1462,7 @@ export default defineConfig({
 **Goal**: Endpoint discovery
 
 **Tasks**:
+
 1. MicropubDiscovery component
 2. Link rel tags
 3. HTTP Link headers
@@ -1355,9 +1471,10 @@ export default defineConfig({
 6. Documentation
 
 **Deliverables**:
-- Discovery component
-- HTTP headers
-- Client compatibility
+
+-  Discovery component
+-  HTTP headers
+-  Client compatibility
 
 ---
 
@@ -1366,6 +1483,7 @@ export default defineConfig({
 **Goal**: Production readiness
 
 **Tasks**:
+
 1. micropub.rocks testing
 2. Real client testing (Quill, Indigenous)
 3. Unit tests
@@ -1376,10 +1494,11 @@ export default defineConfig({
 8. Deployment docs
 
 **Deliverables**:
-- Pass micropub.rocks
-- Working with clients
-- Test suite
-- Deployment guides
+
+-  Pass micropub.rocks
+-  Working with clients
+-  Test suite
+-  Deployment guides
 
 ---
 
@@ -1388,6 +1507,7 @@ export default defineConfig({
 **Goal**: v1.0 release
 
 **Tasks**:
+
 1. Comprehensive error handling
 2. Rate limiting
 3. Logging
@@ -1399,10 +1519,11 @@ export default defineConfig({
 9. Migration guides
 
 **Deliverables**:
-- Complete documentation
-- Example projects
-- npm package
-- v1.0 release
+
+-  Complete documentation
+-  Example projects
+-  npm package
+-  v1.0 release
 
 ---
 
@@ -1470,23 +1591,25 @@ astro-micropub/
 ### Unit Tests
 
 **Coverage**:
-- Parsers (form-encoded with brackets, JSON, multipart)
-- Update operation semantics (replace/add/delete)
-- Slug generation and collision handling
-- Token verification and caching
-- CORS headers
-- Error response formatting
+
+-  Parsers (form-encoded with brackets, JSON, multipart)
+-  Update operation semantics (replace/add/delete)
+-  Slug generation and collision handling
+-  Token verification and caching
+-  CORS headers
+-  Error response formatting
 
 ---
 
 ### Integration Tests
 
 **Coverage**:
-- Full Micropub flow (create, query, update, delete)
-- Token verification with mock endpoint
-- Media upload
-- Storage adapters
-- Discovery
+
+-  Full Micropub flow (create, query, update, delete)
+-  Token verification with mock endpoint
+-  Media upload
+-  Storage adapters
+-  Discovery
 
 ---
 
@@ -1495,57 +1618,65 @@ astro-micropub/
 **Tool**: micropub.rocks
 
 **Coverage**:
-- All server tests
-- Update/delete semantics
-- Media endpoint
-- Query endpoints
+
+-  All server tests
+-  Update/delete semantics
+-  Media endpoint
+-  Query endpoints
 
 ---
 
 ### Manual Testing
 
 **Clients**:
-- Quill (https://quill.p3k.io)
-- Indigenous (mobile)
-- Micropublish (https://micropublish.net)
+
+-  Quill (https://quill.p3k.io)
+-  Indigenous (mobile)
+-  Micropublish (https://micropublish.net)
 
 ---
 
 ## Security Considerations
 
 ### Authentication
-- RFC 6750 compliant WWW-Authenticate headers
-- Token verification against external endpoint
-- Verification caching (max 120s)
-- Never log tokens
+
+-  RFC 6750 compliant WWW-Authenticate headers
+-  Token verification against external endpoint
+-  Verification caching (max 120s)
+-  Never log tokens
 
 ### Scope Enforcement
-- Strict scope requirements (create, update, delete, media)
-- Scope checked per operation
-- Proper error responses with required scope
+
+-  Strict scope requirements (create, update, delete, media)
+-  Scope checked per operation
+-  Proper error responses with required scope
 
 ### File Uploads
-- Size limits (configurable)
-- MIME type whitelist
-- Streaming (no memory buffering)
-- Safe filename generation (hash-based)
-- Path traversal prevention
+
+-  Size limits (configurable)
+-  MIME type whitelist
+-  Streaming (no memory buffering)
+-  Safe filename generation (hash-based)
+-  Path traversal prevention
 
 ### Input Validation
-- Zod validation at boundaries
-- Sanitize HTML if configured
-- Validate absolute URLs
-- Prevent injection attacks
+
+-  Zod validation at boundaries
+-  Sanitize HTML if configured
+-  Validate absolute URLs
+-  Prevent injection attacks
 
 ### Rate Limiting
-- Per-token and per-IP
-- Configurable windows and limits
-- Fail2ban compatible
+
+-  Per-token and per-IP
+-  Configurable windows and limits
+-  Fail2ban compatible
 
 ### CORS
-- Configurable allowed origins
-- Proper preflight handling
-- Credentials support
+
+-  Configurable allowed origins
+-  Proper preflight handling
+-  Credentials support
 
 ---
 
@@ -1554,34 +1685,38 @@ astro-micropub/
 ### User Documentation
 
 1. **Getting Started**
-   - Installation
-   - Basic configuration
-   - Using external IndieAuth (tokens.indieauth.com)
-   - First post with Quill
+
+   -  Installation
+   -  Basic configuration
+   -  Using external IndieAuth (tokens.indieauth.com)
+   -  First post with Quill
 
 2. **Configuration Reference**
-   - All options explained
-   - Storage adapter configuration
-   - Security settings
-   - IndieAuth setup
+
+   -  All options explained
+   -  Storage adapter configuration
+   -  Security settings
+   -  IndieAuth setup
 
 3. **Storage Adapters**
-   - Git adapter (production default)
-   - Database adapter (SSR sites)
-   - Dev FS adapter (dev only)
-   - Custom adapter guide
+
+   -  Git adapter (production default)
+   -  Database adapter (SSR sites)
+   -  Dev FS adapter (dev only)
+   -  Custom adapter guide
 
 4. **Deployment**
-   - Netlify + Git adapter
-   - Vercel + Git adapter
-   - SSR with database adapter
-   - Serverless considerations
+   -  Netlify + Git adapter
+   -  Vercel + Git adapter
+   -  SSR with database adapter
+   -  Serverless considerations
 
 ---
 
 ## Reference Materials
 
 ### Specifications
+
 1. Micropub: https://www.w3.org/TR/micropub/
 2. IndieAuth: https://indieauth.spec.indieweb.org/
 3. Microformats2: http://microformats.org/wiki/microformats2
@@ -1589,14 +1724,17 @@ astro-micropub/
 5. RFC 6750 (Bearer Token): https://tools.ietf.org/html/rfc6750
 
 ### Testing
+
 1. micropub.rocks: https://micropub.rocks/
 2. indieauth.rocks: https://indieauth.rocks/
 
 ### IndieWeb
+
 1. Micropub: https://indieweb.org/Micropub
 2. IndieAuth: https://indieweb.org/IndieAuth
 
 ### Astro
+
 1. Integration API: https://docs.astro.build/en/reference/integrations-reference/
 2. Middleware: https://docs.astro.build/en/guides/middleware/
 
@@ -1605,25 +1743,27 @@ astro-micropub/
 ## Success Criteria
 
 ### v1.0 Requirements
-- ✅ Create posts via Micropub
-- ✅ Update and delete posts
-- ✅ Media endpoint
-- ✅ Token verification (external)
-- ✅ Git adapter with deploy hooks
-- ✅ Pass micropub.rocks tests
-- ✅ Works with Quill and Indigenous
-- ✅ CORS support
-- ✅ RFC 6750 compliance
-- ✅ Production-ready documentation
+
+-  ✅ Create posts via Micropub
+-  ✅ Update and delete posts
+-  ✅ Media endpoint
+-  ✅ Token verification (external)
+-  ✅ Git adapter with deploy hooks
+-  ✅ Pass micropub.rocks tests
+-  ✅ Works with Quill and Indigenous
+-  ✅ CORS support
+-  ✅ RFC 6750 compliance
+-  ✅ Production-ready documentation
 
 ### Future (v2.0+)
-- Built-in IndieAuth server (optional)
-- Syndication (POSSE)
-- Multi-user support
-- Admin UI
-- Webmention integration
+
+-  Built-in IndieAuth server (optional)
+-  Syndication (POSSE)
+-  Multi-user support
+-  Admin UI
+-  Webmention integration
 
 ---
 
-*Last Updated: 2025-01-18*
-*Version: 1.0 (Revised with Oracle feedback)*
+_Last Updated: 2025-01-18_
+_Version: 1.0 (Revised with Oracle feedback)_
