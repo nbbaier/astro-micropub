@@ -10,10 +10,10 @@ This guide will help you set up `astro-micropub` in your Astro project and creat
 
 ## Installation
 
-Install the package via npm:
+Install the package:
 
 ```bash
-npm install astro-micropub
+bun add astro-micropub
 ```
 
 ## Basic Setup

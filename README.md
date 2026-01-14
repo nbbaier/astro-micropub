@@ -19,7 +19,7 @@ A production-ready Micropub resource server integration for Astro.
 ## Installation
 
 ```bash
-npm install astro-micropub
+bun add astro-micropub
 ```
 
 ## Quick Start
@@ -59,13 +59,16 @@ See the `/docs` folder for detailed documentation (coming soon).
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Run tests
-npm test
+bun run test
 
 # Build
-npm run build
+bun run build
+
+# Lint/format
+bun x ultracite fix
 ```
 
 ## License
