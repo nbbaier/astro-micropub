@@ -1,12 +1,19 @@
-import type { TokenVerificationResult } from '../types/micropub.js';
+import type { TokenVerificationResult } from "../types/micropub.js";
 
 /**
  * Simple in-memory cache for token verifications
  */
 class TokenCache {
-  private cache = new Map<string, { result: TokenVerificationResult; expiry: number }>();
+  private cache = new Map<
+    string,
+    { result: TokenVerificationResult; expiry: number }
+  >();
 
-  set(token: string, result: TokenVerificationResult, ttlSeconds: number): void {
+  set(
+    token: string,
+    result: TokenVerificationResult,
+    ttlSeconds: number,
+  ): void {
     const expiry = Date.now() + ttlSeconds * 1000;
     this.cache.set(token, { result, expiry });
 
@@ -48,8 +55,8 @@ const tokenCache = new TokenCache();
  * Extract Bearer token from Authorization header
  */
 export function extractToken(request: Request): string | null {
-  const authHeader = request.headers.get('authorization');
-  if (authHeader?.toLowerCase().startsWith('bearer ')) {
+  const authHeader = request.headers.get("authorization");
+  if (authHeader?.toLowerCase().startsWith("bearer ")) {
     return authHeader.substring(7).trim();
   }
   return null;
@@ -61,7 +68,7 @@ export function extractToken(request: Request): string | null {
 export async function verifyToken(
   token: string,
   tokenEndpoint: string,
-  cacheTTL: number = 120
+  cacheTTL: number = 120,
 ): Promise<TokenVerificationResult | null> {
   // Check cache first
   const cached = tokenCache.get(token);
@@ -72,10 +79,10 @@ export async function verifyToken(
   try {
     // Verify with IndieAuth token endpoint
     const response = await fetch(tokenEndpoint, {
-      method: 'GET',
+      method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
+        Accept: "application/json",
       },
     });
 
@@ -83,18 +90,17 @@ export async function verifyToken(
       return null;
     }
 
-    const data = await response.json() as any;
+    const data = (await response.json()) as Record<string, unknown>;
 
     // Validate required fields
     if (!data.me || !data.scope) {
-      console.error('Token verification response missing required fields:', data);
       return null;
     }
 
     const result: TokenVerificationResult = {
       active: true,
       me: data.me as string,
-      client_id: (data.client_id as string) || '',
+      client_id: (data.client_id as string) || "",
       scope: data.scope as string,
       exp: data.exp as number | undefined,
     };
@@ -108,8 +114,7 @@ export async function verifyToken(
     tokenCache.set(token, result, cacheTTL);
 
     return result;
-  } catch (error) {
-    console.error('Token verification failed:', error);
+  } catch {
     return null;
   }
 }
@@ -127,7 +132,7 @@ export function clearTokenCache(): void {
 export async function withAuth(
   request: Request,
   tokenEndpoint: string,
-  cacheTTL?: number
+  cacheTTL?: number,
 ): Promise<{
   authorized: boolean;
   verification?: TokenVerificationResult;
@@ -138,7 +143,7 @@ export async function withAuth(
   if (!token) {
     return {
       authorized: false,
-      error: 'invalid_token',
+      error: "invalid_token",
     };
   }
 
@@ -147,7 +152,7 @@ export async function withAuth(
   if (!verification) {
     return {
       authorized: false,
-      error: 'invalid_token',
+      error: "invalid_token",
     };
   }
 

@@ -1,4 +1,8 @@
-import type { MicroformatsEntry, UpdateOperation, PostMetadata } from '../types/micropub.js';
+import type {
+  MicroformatsEntry,
+  UpdateOperation,
+  PostMetadata,
+} from "../types/micropub.js";
 
 /**
  * Core storage adapter interface for Micropub posts
@@ -17,7 +21,10 @@ export interface MicropubStorageAdapter {
    * @param properties - Optional array of properties to filter
    * @returns Microformats2 entry or null if not found
    */
-  getPost(url: string, properties?: string[]): Promise<MicroformatsEntry | null>;
+  getPost(
+    url: string,
+    properties?: string[],
+  ): Promise<MicroformatsEntry | null>;
 
   /**
    * Update a post

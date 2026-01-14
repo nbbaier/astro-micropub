@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Syndication target schema
@@ -12,8 +12,8 @@ export const syndicationTargetSchema = z.object({
  * Micropub configuration schema
  */
 export const micropubConfigSchema = z.object({
-  endpoint: z.string().default('/micropub'),
-  mediaEndpoint: z.string().default('/micropub/media'),
+  endpoint: z.string().default("/micropub"),
+  mediaEndpoint: z.string().default("/micropub/media"),
   enableUpdates: z.boolean().default(true),
   enableDeletes: z.boolean().default(true),
   syndicationTargets: z.array(syndicationTargetSchema).default([]),
@@ -40,7 +40,10 @@ export const discoveryConfigSchema = z.object({
  * Rate limit configuration schema
  */
 export const rateLimitConfigSchema = z.object({
-  windowMs: z.number().positive().default(15 * 60 * 1000), // 15 minutes
+  windowMs: z
+    .number()
+    .positive()
+    .default(15 * 60 * 1000), // 15 minutes
   maxRequests: z.number().positive().default(100),
 });
 
@@ -49,11 +52,20 @@ export const rateLimitConfigSchema = z.object({
  */
 export const securityConfigSchema = z.object({
   requireScope: z.boolean().default(true),
-  allowedOrigins: z.array(z.string()).default(['*']),
-  maxUploadSize: z.number().positive().default(10 * 1024 * 1024), // 10 MB
+  allowedOrigins: z.array(z.string()).default(["*"]),
+  maxUploadSize: z
+    .number()
+    .positive()
+    .default(10 * 1024 * 1024), // 10 MB
   allowedMimeTypes: z
     .array(z.string())
-    .default(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']),
+    .default([
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+    ]),
   rateLimit: rateLimitConfigSchema.optional(),
   sanitizeHtml: z.function().args(z.string()).returns(z.string()).optional(),
 });

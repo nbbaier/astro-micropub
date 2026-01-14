@@ -1,5 +1,8 @@
-import type { MicropubStorageAdapter, MediaStorageAdapter } from '../storage/adapter.js';
-import type { SyndicationTarget } from './micropub.js';
+import type {
+  MicropubStorageAdapter,
+  MediaStorageAdapter,
+} from "../storage/adapter.js";
+import type { SyndicationTarget } from "./micropub.js";
 
 /**
  * Micropub configuration options
@@ -90,9 +93,10 @@ export interface ResolvedConfig {
   indieauth: IndieAuthConfig;
   storage: StorageConfig;
   discovery: Required<DiscoveryConfig>;
-  security: Required<Omit<SecurityConfig, 'rateLimit' | 'sanitizeHtml'>> & {
+  security: Required<Omit<SecurityConfig, "rateLimit" | "sanitizeHtml">> & {
     rateLimit?: RateLimitConfig;
     sanitizeHtml?: (html: string) => string;
   };
   site: SiteConfig;
+  siteUrl: string;
 }

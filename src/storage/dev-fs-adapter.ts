@@ -1,9 +1,13 @@
-import { promises as fs } from 'fs';
-import { join, dirname } from 'path';
-import matter from 'gray-matter';
-import slugify from 'slugify';
-import type { MicropubStorageAdapter, MediaStorageAdapter } from './adapter.js';
-import type { MicroformatsEntry, UpdateOperation, PostMetadata } from '../types/micropub.js';
+import { promises as fs } from "fs";
+import { join, dirname } from "path";
+import matter from "gray-matter";
+import slugify from "slugify";
+import type { MicropubStorageAdapter, MediaStorageAdapter } from "./adapter.js";
+import type {
+  MicroformatsEntry,
+  UpdateOperation,
+  PostMetadata,
+} from "../types/micropub.js";
 
 export interface DevFSAdapterOptions {
   contentDir: string;
@@ -17,22 +21,23 @@ export interface DevFSAdapterOptions {
  * ⚠️ WARNING: NOT suitable for production serverless deployments!
  * Files will be lost on serverless platforms. Use GitAdapter or DatabaseAdapter instead.
  */
-export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter {
+export class DevFSAdapter
+implements MicropubStorageAdapter, MediaStorageAdapter
+{
   private contentDir: string;
   private mediaDir: string;
   private siteUrl: string;
 
   constructor(options: DevFSAdapterOptions) {
     this.contentDir = options.contentDir;
-    this.mediaDir = options.mediaDir || 'public/media';
+    this.mediaDir = options.mediaDir || "public/media";
     this.siteUrl = options.siteUrl;
 
-    // Warn in production or serverless environments
     if (this.isProduction() || this.isServerless()) {
       console.warn(
-        '\n⚠️  WARNING: DevFSAdapter is NOT suitable for production!\n' +
-        '   Files will be lost on serverless platforms.\n' +
-        '   Use GitAdapter or DatabaseAdapter instead.\n'
+        "\n⚠️  WARNING: DevFSAdapter is NOT suitable for production!\n" +
+          "   Files will be lost on serverless platforms.\n" +
+          "   Use GitAdapter or DatabaseAdapter instead.\n",
       );
     }
 
@@ -40,7 +45,7 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
   }
 
   private isProduction(): boolean {
-    return process.env.NODE_ENV === 'production';
+    return process.env.NODE_ENV === "production";
   }
 
   private isServerless(): boolean {
@@ -58,7 +63,9 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
       await fs.mkdir(this.contentDir, { recursive: true });
       await fs.mkdir(this.mediaDir, { recursive: true });
     } catch (error) {
-      console.error('Failed to create directories:', error);
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+        console.warn("Failed to create directories:", error);
+      }
     }
   }
 
@@ -67,23 +74,26 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
    */
   private generateSlug(entry: MicroformatsEntry): string {
     // Check for mp-slug first
-    const customSlug = entry.properties['mp-slug']?.[0];
-    if (customSlug) {
+    const customSlug = entry.properties["mp-slug"]?.[0];
+    if (typeof customSlug === "string") {
       return slugify(customSlug, { lower: true, strict: true });
     }
 
     // Try name/title
     const name = entry.properties.name?.[0];
-    if (name && typeof name === 'string') {
+    if (typeof name === "string") {
       return slugify(name, { lower: true, strict: true });
     }
 
     // Try content (first 50 chars)
     const content = entry.properties.content?.[0];
     if (content) {
-      const text = typeof content === 'string'
-        ? content
-        : content.value || content.text || '';
+      const text =
+        typeof content === "string"
+          ? content
+          : (content as { value?: string; text?: string }).value ||
+            (content as { value?: string; text?: string }).text ||
+            "";
       const truncated = text.substring(0, 50).trim();
       if (truncated) {
         return slugify(truncated, { lower: true, strict: true });
@@ -145,44 +155,50 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
   /**
    * Convert MF2 entry to markdown with frontmatter
    */
-  private entryToMarkdown(entry: MicroformatsEntry): { frontmatter: any; content: string } {
-    const frontmatter: any = {
+  private entryToMarkdown(entry: MicroformatsEntry): {
+    frontmatter: Record<string, unknown>;
+    content: string;
+  } {
+    const frontmatter: Record<string, unknown> = {
       type: entry.type[0],
       published: entry.properties.published?.[0] || new Date().toISOString(),
     };
 
-    let content = '';
+    let content = "";
 
     // Handle content
     if (entry.properties.content) {
       const contentValue = entry.properties.content[0];
-      if (typeof contentValue === 'string') {
+      if (typeof contentValue === "string") {
         content = contentValue;
-      } else if (contentValue.markdown) {
-        content = contentValue.markdown;
-        if (contentValue.html) {
-          frontmatter.content_html = contentValue.html;
+      } else if (contentValue && typeof contentValue === "object") {
+        const cv = contentValue as { markdown?: string; html?: string; value?: string };
+        if (cv.markdown) {
+          content = cv.markdown;
+          if (cv.html) {
+            frontmatter.content_html = cv.html;
+          }
+        } else if (cv.html) {
+          frontmatter.content_html = cv.html;
+          content = cv.value || "";
+        } else if (cv.value) {
+          content = cv.value;
         }
-      } else if (contentValue.html) {
-        frontmatter.content_html = contentValue.html;
-        content = contentValue.value || '';
-      } else if (contentValue.value) {
-        content = contentValue.value;
       }
     }
 
     // Handle photos with alt text
     if (entry.properties.photo) {
       const photos = entry.properties.photo;
-      const alts = entry.properties['mp-photo-alt'] || [];
-      frontmatter.photo = photos.map((url: string, i: number) => ({
-        url,
-        alt: alts[i] || '',
+      const alts = entry.properties["mp-photo-alt"] || [];
+      frontmatter.photo = photos.map((url: unknown, i: number) => ({
+        url: String(url),
+        alt: String(alts[i] || ""),
       }));
     }
 
     // Handle post-status
-    if (entry.properties['post-status']?.[0] === 'draft') {
+    if (entry.properties["post-status"]?.[0] === "draft") {
       frontmatter.draft = true;
     }
 
@@ -193,17 +209,17 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
 
     // Map other properties (skip mp-* internals and already handled props)
     const skip = [
-      'content',
-      'published',
-      'photo',
-      'mp-photo-alt',
-      'mp-slug',
-      'post-status',
-      'visibility',
+      "content",
+      "published",
+      "photo",
+      "mp-photo-alt",
+      "mp-slug",
+      "post-status",
+      "visibility",
     ];
 
     for (const [key, values] of Object.entries(entry.properties)) {
-      if (!skip.includes(key) && !key.startsWith('mp-')) {
+      if (!skip.includes(key) && !key.startsWith("mp-")) {
         frontmatter[key] = values.length === 1 ? values[0] : values;
       }
     }
@@ -214,19 +230,24 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
   /**
    * Convert markdown with frontmatter back to MF2 entry
    */
-  private markdownToEntry(_slug: string, fileContent: string): MicroformatsEntry {
+  private markdownToEntry(
+    _slug: string,
+    fileContent: string,
+  ): MicroformatsEntry {
     const { data: frontmatter, content } = matter(fileContent);
 
-    const properties: any = {};
+    const properties: Record<string, unknown[]> = {};
 
     // Restore content (trim trailing newlines added by gray-matter)
     if (content) {
       const trimmedContent = content.trimEnd();
       if (frontmatter.content_html) {
-        properties.content = [{
-          html: frontmatter.content_html,
-          value: trimmedContent,
-        }];
+        properties.content = [
+          {
+            html: frontmatter.content_html,
+            value: trimmedContent,
+          },
+        ];
       } else {
         properties.content = [trimmedContent];
       }
@@ -234,17 +255,26 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
 
     // Restore photos
     if (frontmatter.photo) {
-      properties.photo = frontmatter.photo.map((p: any) => p.url);
-      properties['mp-photo-alt'] = frontmatter.photo.map((p: any) => p.alt || '');
+      properties.photo = frontmatter.photo.map((p: unknown) => (p as { url: string }).url);
+      properties["mp-photo-alt"] = frontmatter.photo.map(
+        (p: unknown) => (p as { alt?: string }).alt || "",
+      );
     }
 
     // Restore post-status
     if (frontmatter.draft) {
-      properties['post-status'] = ['draft'];
+      properties["post-status"] = ["draft"];
     }
 
     // Restore other properties
-    const skip = ['type', 'published', 'content_html', 'photo', 'draft', 'visibility'];
+    const skip = [
+      "type",
+      "published",
+      "content_html",
+      "photo",
+      "draft",
+      "visibility",
+    ];
     for (const [key, value] of Object.entries(frontmatter)) {
       if (!skip.includes(key)) {
         properties[key] = Array.isArray(value) ? value : [value];
@@ -257,7 +287,7 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
     }
 
     return {
-      type: [frontmatter.type || 'h-entry'],
+      type: [frontmatter.type || "h-entry"],
       properties,
     };
   }
@@ -278,18 +308,21 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
     await fs.mkdir(dirname(filePath), { recursive: true });
 
     // Write file
-    await fs.writeFile(filePath, fileContent, 'utf-8');
+    await fs.writeFile(filePath, fileContent, "utf-8");
 
     return {
       url: this.slugToUrl(slug),
-      published: new Date(frontmatter.published),
+      published: new Date(frontmatter.published as string | number | Date),
     };
   }
 
   /**
    * Get a post by URL
    */
-  async getPost(url: string, properties?: string[]): Promise<MicroformatsEntry | null> {
+  async getPost(
+    url: string,
+    properties?: string[],
+  ): Promise<MicroformatsEntry | null> {
     const slug = this.urlToSlug(url);
     if (!slug) {
       return null;
@@ -298,12 +331,12 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
     const filePath = join(this.contentDir, `${slug}.md`);
 
     try {
-      const fileContent = await fs.readFile(filePath, 'utf-8');
+      const fileContent = await fs.readFile(filePath, "utf-8");
       const entry = this.markdownToEntry(slug, fileContent);
 
       // Filter properties if requested
       if (properties && properties.length > 0) {
-        const filtered: any = {};
+        const filtered: Record<string, unknown[]> = {};
         for (const prop of properties) {
           if (entry.properties[prop]) {
             filtered[prop] = entry.properties[prop];
@@ -316,7 +349,7 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
       }
 
       return entry;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -324,10 +357,13 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
   /**
    * Update a post
    */
-  async updatePost(url: string, operations: UpdateOperation[]): Promise<PostMetadata> {
+  async updatePost(
+    url: string,
+    operations: UpdateOperation[],
+  ): Promise<PostMetadata> {
     const entry = await this.getPost(url);
     if (!entry) {
-      throw new Error('Post not found');
+      throw new Error("Post not found");
     }
 
     // Apply operations
@@ -341,18 +377,19 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
     // Save back
     const slug = this.urlToSlug(url);
     if (!slug) {
-      throw new Error('Invalid URL');
+      throw new Error("Invalid URL");
     }
 
     const { frontmatter, content } = this.entryToMarkdown(entry);
     const fileContent = matter.stringify(content, frontmatter);
     const filePath = join(this.contentDir, `${slug}.md`);
 
-    await fs.writeFile(filePath, fileContent, 'utf-8');
+    await fs.writeFile(filePath, fileContent, "utf-8");
 
+    const publishedValue = entry.properties.published?.[0];
     return {
       url,
-      published: new Date(entry.properties.published?.[0] || Date.now()),
+      published: new Date((publishedValue as string | number | Date) ?? Date.now()),
       modified: new Date(),
     };
   }
@@ -360,41 +397,36 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
   /**
    * Apply an update operation
    */
-  private applyOperation(properties: any, op: UpdateOperation): void {
+  private applyOperation(properties: Record<string, unknown[]>, op: UpdateOperation): void {
     switch (op.action) {
-      case 'replace':
-        properties[op.property] = op.value;
-        break;
+    case "replace":
+      properties[op.property] = op.value;
+      break;
 
-      case 'add':
-        if (!properties[op.property]) {
-          properties[op.property] = [];
-        }
-        if (!Array.isArray(properties[op.property])) {
-          properties[op.property] = [properties[op.property]];
-        }
-        properties[op.property].push(...op.value);
-        break;
+    case "add":
+      if (!properties[op.property]) {
+        properties[op.property] = [];
+      }
+      properties[op.property].push(...op.value);
+      break;
 
-      case 'delete':
-        if (op.value && op.value.length > 0) {
-          // Delete specific values (deep equality)
-          if (!Array.isArray(properties[op.property])) {
-            properties[op.property] = [properties[op.property]];
-          }
-          properties[op.property] = properties[op.property].filter(
-            (v: any) => !op.value!.some(
-              (deleteVal) => JSON.stringify(v) === JSON.stringify(deleteVal)
-            )
-          );
-          if (properties[op.property].length === 0) {
-            delete properties[op.property];
-          }
-        } else {
-          // Delete entire property
+    case "delete":
+      if (op.value && op.value.length > 0) {
+        // Delete specific values (deep equality)
+        properties[op.property] = properties[op.property].filter(
+          (v: unknown) =>
+            !op.value!.some(
+              (deleteVal) => JSON.stringify(v) === JSON.stringify(deleteVal),
+            ),
+        );
+        if (properties[op.property].length === 0) {
           delete properties[op.property];
         }
-        break;
+      } else {
+        // Delete entire property
+        delete properties[op.property];
+      }
+      break;
     }
   }
 
@@ -404,14 +436,14 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
   async deletePost(url: string): Promise<void> {
     const entry = await this.getPost(url);
     if (!entry) {
-      throw new Error('Post not found');
+      throw new Error("Post not found");
     }
 
     entry.properties.deleted = [true];
 
     const slug = this.urlToSlug(url);
     if (!slug) {
-      throw new Error('Invalid URL');
+      throw new Error("Invalid URL");
     }
 
     const { frontmatter, content } = this.entryToMarkdown(entry);
@@ -420,7 +452,7 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
     const fileContent = matter.stringify(content, frontmatter);
     const filePath = join(this.contentDir, `${slug}.md`);
 
-    await fs.writeFile(filePath, fileContent, 'utf-8');
+    await fs.writeFile(filePath, fileContent, "utf-8");
   }
 
   /**
@@ -429,14 +461,14 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
   async undeletePost(url: string): Promise<void> {
     const entry = await this.getPost(url);
     if (!entry) {
-      throw new Error('Post not found');
+      throw new Error("Post not found");
     }
 
     delete entry.properties.deleted;
 
     const slug = this.urlToSlug(url);
     if (!slug) {
-      throw new Error('Invalid URL');
+      throw new Error("Invalid URL");
     }
 
     const { frontmatter, content } = this.entryToMarkdown(entry);
@@ -445,7 +477,7 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
     const fileContent = matter.stringify(content, frontmatter);
     const filePath = join(this.contentDir, `${slug}.md`);
 
-    await fs.writeFile(filePath, fileContent, 'utf-8');
+    await fs.writeFile(filePath, fileContent, "utf-8");
   }
 
   /**
@@ -462,7 +494,7 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
     await fs.writeFile(filePath, buffer);
 
     // Return absolute URL (assuming mediaDir is in public/)
-    const publicPath = this.mediaDir.replace(/^public/, '');
+    const publicPath = this.mediaDir.replace(/^public/, "");
     return new URL(`${publicPath}/${filename}`, this.siteUrl).toString();
   }
 
@@ -472,12 +504,12 @@ export class DevFSAdapter implements MicropubStorageAdapter, MediaStorageAdapter
   async deleteFile(url: string): Promise<void> {
     const urlObj = new URL(url);
     const publicPath = urlObj.pathname;
-    const filePath = join('public', publicPath);
+    const filePath = join("public", publicPath);
 
     try {
       await fs.unlink(filePath);
-    } catch (error) {
-      console.error('Failed to delete file:', error);
+    } catch {
+      // Ignore file deletion errors
     }
   }
 }

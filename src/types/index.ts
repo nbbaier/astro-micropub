@@ -6,7 +6,7 @@ export type {
   SyndicationTarget,
   MicropubAction,
   MicropubQuery,
-} from './micropub.js';
+} from "./micropub.js";
 
 export type {
   MicropubConfig,
@@ -18,4 +18,4 @@ export type {
   SiteConfig,
   AstroMicropubConfig,
   ResolvedConfig,
-} from './config.js';
+} from "./config.js";
