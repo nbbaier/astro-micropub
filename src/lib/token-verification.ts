@@ -4,7 +4,7 @@ import type { TokenVerificationResult } from "../types/micropub.js";
  * Simple in-memory cache for token verifications
  */
 class TokenCache {
-  private cache = new Map<
+  private readonly cache = new Map<
     string,
     { result: TokenVerificationResult; expiry: number }
   >();
@@ -12,7 +12,7 @@ class TokenCache {
   set(
     token: string,
     result: TokenVerificationResult,
-    ttlSeconds: number,
+    ttlSeconds: number
   ): void {
     const expiry = Date.now() + ttlSeconds * 1000;
     this.cache.set(token, { result, expiry });
@@ -65,11 +65,19 @@ export function extractToken(request: Request): string | null {
 /**
  * Verify a token with the IndieAuth token endpoint
  */
+/** Default timeout for token verification requests (5 seconds) */
+const TOKEN_VERIFICATION_TIMEOUT_MS = 5000;
+
 export async function verifyToken(
   token: string,
   tokenEndpoint: string,
-  cacheTTL: number = 120,
+  cacheTTL = 120
 ): Promise<TokenVerificationResult | null> {
+  // Validate token is non-empty
+  if (!token || token.trim().length === 0) {
+    return null;
+  }
+
   // Check cache first
   const cached = tokenCache.get(token);
   if (cached) {
@@ -77,6 +85,13 @@ export async function verifyToken(
   }
 
   try {
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      TOKEN_VERIFICATION_TIMEOUT_MS
+    );
+
     // Verify with IndieAuth token endpoint
     const response = await fetch(tokenEndpoint, {
       method: "GET",
@@ -84,7 +99,10 @@ export async function verifyToken(
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       return null;
@@ -93,7 +111,7 @@ export async function verifyToken(
     const data = (await response.json()) as Record<string, unknown>;
 
     // Validate required fields
-    if (!data.me || !data.scope) {
+    if (!(data.me && data.scope)) {
       return null;
     }
 
@@ -132,7 +150,7 @@ export function clearTokenCache(): void {
 export async function withAuth(
   request: Request,
   tokenEndpoint: string,
-  cacheTTL?: number,
+  cacheTTL?: number
 ): Promise<{
   authorized: boolean;
   verification?: TokenVerificationResult;

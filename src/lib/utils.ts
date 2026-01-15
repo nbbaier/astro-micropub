@@ -1,4 +1,7 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
+import type { ResolvedConfig } from "../types/config.js";
+
+declare const __MICROPUB_CONFIG__: ResolvedConfig | undefined;
 
 /**
  * Generate a safe filename for uploaded files
@@ -14,7 +17,7 @@ export async function generateSafeFilename(file: File): Promise<string> {
 
   // Extract extension
   const nameParts = file.name.split(".");
-  const ext = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+  const ext = nameParts.length > 1 ? nameParts.at(-1) : "";
 
   // Generate filename: YYYY/MM/hash-originalname.ext
   const date = new Date();
@@ -59,6 +62,27 @@ export function isAbsoluteUrl(url: string): boolean {
 }
 
 /**
+ * Get the appropriate CORS origin based on the request origin and allowed origins list
+ */
+export function getCorsOrigin(
+  requestOrigin: string | null,
+  allowedOrigins: string[] = ["*"]
+): string {
+  // If wildcard is allowed, return wildcard
+  if (allowedOrigins.includes("*")) {
+    return "*";
+  }
+
+  // If request origin matches an allowed origin, return it
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  // Default to first allowed origin (for non-browser requests or mismatched origins)
+  return allowedOrigins[0] || "*";
+}
+
+/**
  * Create RFC 6750 compliant error response
  */
 export function createAuthError(
@@ -66,6 +90,8 @@ export function createAuthError(
   error: string,
   errorDescription?: string,
   scope?: string,
+  requestOrigin?: string | null,
+  allowedOrigins?: string[]
 ): Response {
   let wwwAuthenticate = `Bearer realm="micropub", error="${error}"`;
 
@@ -77,11 +103,13 @@ export function createAuthError(
     wwwAuthenticate += `, scope="${scope}"`;
   }
 
+  const origin = getCorsOrigin(requestOrigin ?? null, allowedOrigins);
+
   return new Response(null, {
     status,
     headers: {
       "WWW-Authenticate": wwwAuthenticate,
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
     },
   });
 }
@@ -93,17 +121,21 @@ export function createErrorResponse(
   status: number,
   error: string,
   errorDescription?: string,
+  requestOrigin?: string | null,
+  allowedOrigins?: string[]
 ): Response {
   const body = {
     error,
     ...(errorDescription && { error_description: errorDescription }),
   };
 
+  const origin = getCorsOrigin(requestOrigin ?? null, allowedOrigins);
+
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": origin,
     },
   });
 }
@@ -114,10 +146,11 @@ export function createErrorResponse(
 export function addCorsHeaders(
   response: Response,
   allowedOrigins: string[] = ["*"],
+  requestOrigin?: string | null
 ): Response {
   const headers = new Headers(response.headers);
 
-  const origin = allowedOrigins[0] || "*";
+  const origin = getCorsOrigin(requestOrigin ?? null, allowedOrigins);
   headers.set("Access-Control-Allow-Origin", origin);
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
@@ -138,8 +171,9 @@ export function addCorsHeaders(
  */
 export function createCorsPreflightResponse(
   allowedOrigins: string[] = ["*"],
+  requestOrigin?: string | null
 ): Response {
-  const origin = allowedOrigins[0] || "*";
+  const origin = getCorsOrigin(requestOrigin ?? null, allowedOrigins);
 
   return new Response(null, {
     status: 204,
@@ -153,12 +187,9 @@ export function createCorsPreflightResponse(
   });
 }
 
-import type { ResolvedConfig } from "../types/config.js";
-
 /**
  * Get runtime configuration injected by Vite
  */
 export function getRuntimeConfig(): ResolvedConfig {
-  // @ts-expect-error - Injected by Vite
-  return typeof __MICROPUB_CONFIG__ !== "undefined" ? __MICROPUB_CONFIG__ : {};
+  return __MICROPUB_CONFIG__ ?? ({} as ResolvedConfig);
 }

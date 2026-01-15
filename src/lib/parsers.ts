@@ -1,6 +1,19 @@
+import { Readable } from "node:stream";
 import busboy from "busboy";
-import { Readable } from "stream";
 import type { MicroformatsEntry } from "../types/micropub.js";
+
+/** Default maximum file size during multipart parsing (10 MB) */
+const DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+/**
+ * Error thrown when a file exceeds the maximum allowed size during streaming
+ */
+export class FileSizeLimitError extends Error {
+  constructor(maxSize: number) {
+    super(`File exceeds maximum size limit of ${maxSize} bytes`);
+    this.name = "FileSizeLimitError";
+  }
+}
 
 /**
  * Parse form-encoded data with bracket notation support
@@ -18,17 +31,15 @@ export function parseFormEncoded(body: string): Record<string, unknown> {
         result[actualKey] = [];
       }
       (result[actualKey] as unknown[]).push(value);
-    } else {
+    } else if (result[key] !== undefined) {
       // For non-array keys, if we see it again, convert to array
-      if (result[key] !== undefined) {
-        if (Array.isArray(result[key])) {
-          (result[key] as unknown[]).push(value);
-        } else {
-          result[key] = [result[key], value];
-        }
+      if (Array.isArray(result[key])) {
+        (result[key] as unknown[]).push(value);
       } else {
-        result[key] = value;
+        result[key] = [result[key], value];
       }
+    } else {
+      result[key] = value;
     }
   }
 
@@ -39,7 +50,7 @@ export function parseFormEncoded(body: string): Record<string, unknown> {
  * Convert form-encoded data to Microformats2 entry
  */
 export function formToMicroformats(
-  data: Record<string, unknown>,
+  data: Record<string, unknown>
 ): MicroformatsEntry {
   const type = data.h || "entry";
   const properties: Record<string, unknown[]> = {};
@@ -63,9 +74,11 @@ export function formToMicroformats(
 /**
  * Parse JSON request body
  */
-export async function parseJSON(request: Request): Promise<Record<string, unknown>> {
+export async function parseJSON(
+  request: Request
+): Promise<Record<string, unknown>> {
   try {
-    return await request.json() as Record<string, unknown>;
+    return (await request.json()) as Record<string, unknown>;
   } catch {
     throw new Error("Invalid JSON");
   }
@@ -73,8 +86,13 @@ export async function parseJSON(request: Request): Promise<Record<string, unknow
 
 /**
  * Parse multipart/form-data
+ * @param request - The incoming request
+ * @param maxFileSize - Maximum allowed file size in bytes (default: 10MB)
  */
-export async function parseMultipart(request: Request): Promise<{
+export function parseMultipart(
+  request: Request,
+  maxFileSize: number = DEFAULT_MAX_FILE_SIZE
+): Promise<{
   fields: Record<string, unknown>;
   files: Array<{ field: string; file: File }>;
 }> {
@@ -111,12 +129,25 @@ export async function parseMultipart(request: Request): Promise<{
     bb.on("file", (fieldname, file, info) => {
       const { filename, mimeType } = info;
       const chunks: Buffer[] = [];
+      let totalSize = 0;
+      let sizeLimitExceeded = false;
 
-      file.on("data", (data) => {
+      file.on("data", (data: Buffer) => {
+        // Check size limit during streaming to prevent memory exhaustion
+        totalSize += data.length;
+        if (totalSize > maxFileSize) {
+          sizeLimitExceeded = true;
+          file.resume(); // Drain the stream
+          return;
+        }
         chunks.push(data);
       });
 
       file.on("end", () => {
+        if (sizeLimitExceeded) {
+          reject(new FileSizeLimitError(maxFileSize));
+          return;
+        }
         const buffer = Buffer.concat(chunks);
         const blob = new Blob([buffer], { type: mimeType });
         const webFile = new File([blob], filename, { type: mimeType });
@@ -165,9 +196,10 @@ export function getContentType(request: Request): string | null {
 /**
  * Parse request body based on content type
  */
-export async function parseRequest(
-  request: Request,
-): Promise<{ data: Record<string, unknown>; files?: Array<{ field: string; file: File }> }> {
+export async function parseRequest(request: Request): Promise<{
+  data: Record<string, unknown>;
+  files?: Array<{ field: string; file: File }>;
+}> {
   const contentType = getContentType(request);
 
   if (!contentType) {
