@@ -21,7 +21,8 @@
     "test:coverage": "vitest --coverage",
     "check": "ultracite check",
     "fix": "ultracite fix",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "typecheck": "tsgo --noEmit"
   },
   "keywords": [
     "astro",
@@ -46,6 +47,7 @@
     "@biomejs/biome": "2.3.11",
     "@types/busboy": "^1.5.4",
     "@types/node": "^25.0.8",
+    "@typescript/native-preview": "^7.0.0-dev.20260115.1",
     "astro": "^5.16.9",
     "typescript": "^5.9.3",
     "ultracite": "7.0.11",
