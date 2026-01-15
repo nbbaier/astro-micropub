@@ -1,7 +1,7 @@
 import type {
   MicroformatsEntry,
-  UpdateOperation,
   PostMetadata,
+  UpdateOperation,
 } from "../types/micropub.js";
 
 /**
@@ -23,7 +23,7 @@ export interface MicropubStorageAdapter {
    */
   getPost(
     url: string,
-    properties?: string[],
+    properties?: string[]
   ): Promise<MicroformatsEntry | null>;
 
   /**

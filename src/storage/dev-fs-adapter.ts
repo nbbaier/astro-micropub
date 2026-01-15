@@ -1,13 +1,14 @@
-import { promises as fs } from "fs";
-import { join, dirname } from "path";
+import { promises as fs } from "node:fs";
+import { dirname, join } from "node:path";
 import matter from "gray-matter";
 import slugify from "slugify";
-import type { MicropubStorageAdapter, MediaStorageAdapter } from "./adapter.js";
+import { NotFoundError } from "../lib/errors.js";
 import type {
   MicroformatsEntry,
-  UpdateOperation,
   PostMetadata,
+  UpdateOperation,
 } from "../types/micropub.js";
+import type { MediaStorageAdapter, MicropubStorageAdapter } from "./adapter.js";
 
 export interface DevFSAdapterOptions {
   contentDir: string;
@@ -21,12 +22,15 @@ export interface DevFSAdapterOptions {
  * ⚠️ WARNING: NOT suitable for production serverless deployments!
  * Files will be lost on serverless platforms. Use GitAdapter or DatabaseAdapter instead.
  */
+const POST_PATH_REGEX = /\/posts\/([^/]+)/;
+const PUBLIC_PATH_REGEX = /^public/;
+
 export class DevFSAdapter
-implements MicropubStorageAdapter, MediaStorageAdapter
+  implements MicropubStorageAdapter, MediaStorageAdapter
 {
-  private contentDir: string;
-  private mediaDir: string;
-  private siteUrl: string;
+  private readonly contentDir: string;
+  private readonly mediaDir: string;
+  private readonly siteUrl: string;
 
   constructor(options: DevFSAdapterOptions) {
     this.contentDir = options.contentDir;
@@ -37,7 +41,7 @@ implements MicropubStorageAdapter, MediaStorageAdapter
       console.warn(
         "\n⚠️  WARNING: DevFSAdapter is NOT suitable for production!\n" +
           "   Files will be lost on serverless platforms.\n" +
-          "   Use GitAdapter or DatabaseAdapter instead.\n",
+          "   Use GitAdapter or DatabaseAdapter instead.\n"
       );
     }
 
@@ -145,7 +149,7 @@ implements MicropubStorageAdapter, MediaStorageAdapter
   private urlToSlug(url: string): string | null {
     try {
       const urlObj = new URL(url);
-      const match = urlObj.pathname.match(/\/posts\/([^\/]+)/);
+      const match = urlObj.pathname.match(POST_PATH_REGEX);
       return match ? match[1] : null;
     } catch {
       return null;
@@ -164,50 +168,90 @@ implements MicropubStorageAdapter, MediaStorageAdapter
       published: entry.properties.published?.[0] || new Date().toISOString(),
     };
 
-    let content = "";
+    const content = this.getContent(entry, frontmatter);
+    this.addPhotosToFrontmatter(entry, frontmatter);
+    this.addDraftToFrontmatter(entry, frontmatter);
+    this.addVisibilityToFrontmatter(entry, frontmatter);
+    this.addOtherPropertiesToFrontmatter(entry, frontmatter);
 
-    // Handle content
-    if (entry.properties.content) {
-      const contentValue = entry.properties.content[0];
-      if (typeof contentValue === "string") {
-        content = contentValue;
-      } else if (contentValue && typeof contentValue === "object") {
-        const cv = contentValue as { markdown?: string; html?: string; value?: string };
-        if (cv.markdown) {
-          content = cv.markdown;
-          if (cv.html) {
-            frontmatter.content_html = cv.html;
-          }
-        } else if (cv.html) {
+    return { frontmatter, content };
+  }
+
+  private getContent(
+    entry: MicroformatsEntry,
+    frontmatter: Record<string, unknown>
+  ): string {
+    const contentValue = entry.properties.content?.[0];
+    if (!contentValue) {
+      return "";
+    }
+
+    if (typeof contentValue === "string") {
+      return contentValue;
+    }
+
+    if (contentValue && typeof contentValue === "object") {
+      const cv = contentValue as {
+        markdown?: string;
+        html?: string;
+        value?: string;
+      };
+      if (cv.markdown) {
+        if (cv.html) {
           frontmatter.content_html = cv.html;
-          content = cv.value || "";
-        } else if (cv.value) {
-          content = cv.value;
         }
+        return cv.markdown;
+      }
+      if (cv.html) {
+        frontmatter.content_html = cv.html;
+        return cv.value || "";
+      }
+      if (cv.value) {
+        return cv.value;
       }
     }
 
-    // Handle photos with alt text
-    if (entry.properties.photo) {
-      const photos = entry.properties.photo;
-      const alts = entry.properties["mp-photo-alt"] || [];
-      frontmatter.photo = photos.map((url: unknown, i: number) => ({
-        url: String(url),
-        alt: String(alts[i] || ""),
-      }));
+    return "";
+  }
+
+  private addPhotosToFrontmatter(
+    entry: MicroformatsEntry,
+    frontmatter: Record<string, unknown>
+  ): void {
+    if (!entry.properties.photo) {
+      return;
     }
 
-    // Handle post-status
+    const photos = entry.properties.photo;
+    const alts = entry.properties["mp-photo-alt"] || [];
+    frontmatter.photo = photos.map((url: unknown, i: number) => ({
+      url: String(url),
+      alt: String(alts[i] || ""),
+    }));
+  }
+
+  private addDraftToFrontmatter(
+    entry: MicroformatsEntry,
+    frontmatter: Record<string, unknown>
+  ): void {
     if (entry.properties["post-status"]?.[0] === "draft") {
       frontmatter.draft = true;
     }
+  }
 
-    // Handle visibility
+  private addVisibilityToFrontmatter(
+    entry: MicroformatsEntry,
+    frontmatter: Record<string, unknown>
+  ): void {
     if (entry.properties.visibility) {
       frontmatter.visibility = entry.properties.visibility[0];
     }
+  }
 
-    // Map other properties (skip mp-* internals and already handled props)
+  private addOtherPropertiesToFrontmatter(
+    entry: MicroformatsEntry,
+    frontmatter: Record<string, unknown>
+  ): void {
     const skip = [
       "content",
       "published",
@@ -219,12 +263,10 @@ implements MicropubStorageAdapter, MediaStorageAdapter
     ];
 
     for (const [key, values] of Object.entries(entry.properties)) {
-      if (!skip.includes(key) && !key.startsWith("mp-")) {
+      if (!(skip.includes(key) || key.startsWith("mp-"))) {
         frontmatter[key] = values.length === 1 ? values[0] : values;
       }
     }
-
-    return { frontmatter, content };
   }
 
   /**
@@ -232,7 +274,7 @@ implements MicropubStorageAdapter, MediaStorageAdapter
    */
   private markdownToEntry(
     _slug: string,
-    fileContent: string,
+    fileContent: string
   ): MicroformatsEntry {
     const { data: frontmatter, content } = matter(fileContent);
 
@@ -255,9 +297,11 @@ implements MicropubStorageAdapter, MediaStorageAdapter
 
     // Restore photos
     if (frontmatter.photo) {
-      properties.photo = frontmatter.photo.map((p: unknown) => (p as { url: string }).url);
+      properties.photo = frontmatter.photo.map(
+        (p: unknown) => (p as { url: string }).url
+      );
       properties["mp-photo-alt"] = frontmatter.photo.map(
-        (p: unknown) => (p as { alt?: string }).alt || "",
+        (p: unknown) => (p as { alt?: string }).alt || ""
       );
     }
 
@@ -321,7 +365,7 @@ implements MicropubStorageAdapter, MediaStorageAdapter
    */
   async getPost(
     url: string,
-    properties?: string[],
+    properties?: string[]
   ): Promise<MicroformatsEntry | null> {
     const slug = this.urlToSlug(url);
     if (!slug) {
@@ -359,16 +403,16 @@ implements MicropubStorageAdapter, MediaStorageAdapter
    */
   async updatePost(
     url: string,
-    operations: UpdateOperation[],
+    operations: UpdateOperation[]
   ): Promise<PostMetadata> {
     const entry = await this.getPost(url);
     if (!entry) {
-      throw new Error("Post not found");
+      throw new NotFoundError("Post not found");
     }
 
     // Apply operations
     for (const op of operations) {
-      this.applyOperation(entry.properties, op);
+      entry.properties = this.applyOperation(entry.properties, op);
     }
 
     // Update modified timestamp
@@ -389,7 +433,9 @@ implements MicropubStorageAdapter, MediaStorageAdapter
     const publishedValue = entry.properties.published?.[0];
     return {
       url,
-      published: new Date((publishedValue as string | number | Date) ?? Date.now()),
+      published: new Date(
+        (publishedValue as string | number | Date) ?? Date.now()
+      ),
       modified: new Date(),
     };
   }
@@ -397,37 +443,57 @@ implements MicropubStorageAdapter, MediaStorageAdapter
   /**
    * Apply an update operation
    */
-  private applyOperation(properties: Record<string, unknown[]>, op: UpdateOperation): void {
+  private applyOperation(
+    properties: Record<string, unknown[]>,
+    op: UpdateOperation
+  ): Record<string, unknown[]> {
     switch (op.action) {
-    case "replace":
-      properties[op.property] = op.value;
-      break;
+      case "replace":
+        return {
+          ...properties,
+          [op.property]: op.value,
+        };
 
-    case "add":
-      if (!properties[op.property]) {
-        properties[op.property] = [];
+      case "add": {
+        const existing = properties[op.property] ?? [];
+        return {
+          ...properties,
+          [op.property]: [...existing, ...op.value],
+        };
       }
-      properties[op.property].push(...op.value);
-      break;
 
-    case "delete":
-      if (op.value && op.value.length > 0) {
-        // Delete specific values (deep equality)
-        properties[op.property] = properties[op.property].filter(
-          (v: unknown) =>
-            !op.value!.some(
-              (deleteVal) => JSON.stringify(v) === JSON.stringify(deleteVal),
-            ),
-        );
-        if (properties[op.property].length === 0) {
-          delete properties[op.property];
+      case "delete": {
+        if (op.value && op.value.length > 0) {
+          // Delete specific values (deep equality)
+          const currentValues = properties[op.property] ?? [];
+          const updated = currentValues.filter(
+            (v: unknown) =>
+              !op.value?.some(
+                (deleteVal) => JSON.stringify(v) === JSON.stringify(deleteVal)
+              )
+          );
+          if (updated.length > 0) {
+            return {
+              ...properties,
+              [op.property]: updated,
+            };
+          }
         }
-      } else {
-        // Delete entire property
-        delete properties[op.property];
+
+        return this.removeProperty(properties, op.property);
       }
-      break;
+
+      default:
+        return properties;
     }
+  }
+
+  private removeProperty(
+    properties: Record<string, unknown[]>,
+    property: string
+  ): Record<string, unknown[]> {
+    const { [property]: _removed, ...rest } = properties;
+    return rest;
   }
 
   /**
@@ -436,7 +502,7 @@ implements MicropubStorageAdapter, MediaStorageAdapter
   async deletePost(url: string): Promise<void> {
     const entry = await this.getPost(url);
     if (!entry) {
-      throw new Error("Post not found");
+      throw new NotFoundError("Post not found");
     }
 
     entry.properties.deleted = [true];
@@ -461,10 +527,11 @@ implements MicropubStorageAdapter, MediaStorageAdapter
   async undeletePost(url: string): Promise<void> {
     const entry = await this.getPost(url);
     if (!entry) {
-      throw new Error("Post not found");
+      throw new NotFoundError("Post not found");
     }
 
-    delete entry.properties.deleted;
+    const { deleted: _deleted, ...remainingProperties } = entry.properties;
+    entry.properties = remainingProperties;
 
     const slug = this.urlToSlug(url);
     if (!slug) {
@@ -472,9 +539,9 @@ implements MicropubStorageAdapter, MediaStorageAdapter
     }
 
     const { frontmatter, content } = this.entryToMarkdown(entry);
-    delete frontmatter.deleted;
+    const { deleted: _deletedFlag, ...remainingFrontmatter } = frontmatter;
 
-    const fileContent = matter.stringify(content, frontmatter);
+    const fileContent = matter.stringify(content, remainingFrontmatter);
     const filePath = join(this.contentDir, `${slug}.md`);
 
     await fs.writeFile(filePath, fileContent, "utf-8");
@@ -494,7 +561,7 @@ implements MicropubStorageAdapter, MediaStorageAdapter
     await fs.writeFile(filePath, buffer);
 
     // Return absolute URL (assuming mediaDir is in public/)
-    const publicPath = this.mediaDir.replace(/^public/, "");
+    const publicPath = this.mediaDir.replace(PUBLIC_PATH_REGEX, "");
     return new URL(`${publicPath}/${filename}`, this.siteUrl).toString();
   }
 

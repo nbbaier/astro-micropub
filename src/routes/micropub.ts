@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { isNotFoundError, UrlOwnershipError } from "../lib/errors.js";
 import { formToMicroformats, parseRequest } from "../lib/parsers.js";
 import { withAuth } from "../lib/token-verification.js";
 import {
@@ -10,23 +11,42 @@ import {
   isAbsoluteUrl,
 } from "../lib/utils.js";
 import type { ResolvedConfig } from "../types/config.js";
-import type { MicroformatsEntry, TokenVerificationResult } from "../types/micropub.js";
+import type {
+  MicroformatsEntry,
+  TokenVerificationResult,
+} from "../types/micropub.js";
 import {
   convertToUpdateOperations,
+  type MicropubActionRequest,
   validateMicropubAction,
   validateMicropubCreate,
-  type MicropubActionRequest,
 } from "../validators/micropub.js";
 import { hasScope } from "../validators/scopes.js";
+
+/**
+ * Validate that a URL belongs to the configured site
+ */
+function validateUrlOwnership(url: string, siteMe: string): void {
+  const urlObj = new URL(url);
+  const siteObj = new URL(siteMe);
+
+  if (urlObj.origin !== siteObj.origin) {
+    throw new UrlOwnershipError(`URL ${url} does not belong to this site`);
+  }
+}
 
 export const prerender = false;
 
 /**
  * OPTIONS - CORS preflight
  */
-export const OPTIONS: APIRoute = async () => {
+export const OPTIONS: APIRoute = ({ request }) => {
   const config = getRuntimeConfig();
-  return createCorsPreflightResponse(config.security?.allowedOrigins);
+  const requestOrigin = request.headers.get("origin");
+  return createCorsPreflightResponse(
+    config.security?.allowedOrigins,
+    requestOrigin
+  );
 };
 
 /**
@@ -34,16 +54,24 @@ export const OPTIONS: APIRoute = async () => {
  */
 export const GET: APIRoute = async ({ request, url }) => {
   const config = getRuntimeConfig();
+  const requestOrigin = request.headers.get("origin");
 
   // Verify authentication
   const auth = await withAuth(
     request,
     config.indieauth.tokenEndpoint,
-    config.indieauth.tokenVerificationCache,
+    config.indieauth.tokenVerificationCache
   );
 
-  if (!auth.authorized || !auth.verification) {
-    return createAuthError(401, "invalid_token");
+  if (!(auth.authorized && auth.verification)) {
+    return createAuthError(
+      401,
+      "invalid_token",
+      undefined,
+      undefined,
+      requestOrigin,
+      config.security?.allowedOrigins
+    );
   }
 
   const query = url.searchParams.get("q");
@@ -52,36 +80,38 @@ export const GET: APIRoute = async ({ request, url }) => {
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "Missing q parameter"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 
   try {
     // Handle different query types
     switch (query) {
-    case "config":
-      return handleConfigQuery(config);
+      case "config":
+        return handleConfigQuery(config, requestOrigin);
 
-    case "source":
-      return await handleSourceQuery(url, config);
+      case "source":
+        return await handleSourceQuery(url, config, requestOrigin);
 
-    case "syndicate-to":
-      return handleSyndicateToQuery(config);
+      case "syndicate-to":
+        return handleSyndicateToQuery(config, requestOrigin);
 
-    default:
-      return addCorsHeaders(
-        createErrorResponse(
-          400,
-          "invalid_request",
-          `Unknown query: ${query}`,
-        ),
-        config.security?.allowedOrigins,
-      );
+      default:
+        return addCorsHeaders(
+          createErrorResponse(
+            400,
+            "invalid_request",
+            `Unknown query: ${query}`
+          ),
+          config.security?.allowedOrigins,
+          requestOrigin
+        );
     }
-  } catch (error) {
-    console.error("Query error:", error);
+  } catch {
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Internal server error"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 };
@@ -91,16 +121,24 @@ export const GET: APIRoute = async ({ request, url }) => {
  */
 export const POST: APIRoute = async ({ request }) => {
   const config = getRuntimeConfig();
+  const requestOrigin = request.headers.get("origin");
 
   // Verify authentication
   const auth = await withAuth(
     request,
     config.indieauth.tokenEndpoint,
-    config.indieauth.tokenVerificationCache,
+    config.indieauth.tokenVerificationCache
   );
 
-  if (!auth.authorized || !auth.verification) {
-    return createAuthError(401, "invalid_token");
+  if (!(auth.authorized && auth.verification)) {
+    return createAuthError(
+      401,
+      "invalid_token",
+      undefined,
+      undefined,
+      requestOrigin,
+      config.security?.allowedOrigins
+    );
   }
 
   try {
@@ -109,23 +147,31 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Check if this is an action request (update/delete/undelete)
     if (data.action) {
-      return await handleAction(data, auth.verification, config);
+      return await handleAction(data, auth.verification, config, requestOrigin);
     }
 
     // Otherwise, it's a create request
-    return await handleCreate(data, files?.map((f) => f.file), auth.verification, config);
+    return await handleCreate(
+      data,
+      files?.map((f) => f.file),
+      auth.verification,
+      config,
+      requestOrigin
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.includes("content type")) {
       return addCorsHeaders(
         createErrorResponse(400, "invalid_request", message),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Internal server error"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 };
@@ -133,14 +179,17 @@ export const POST: APIRoute = async ({ request }) => {
 /**
  * Handle config query
  */
-function handleConfigQuery(config: ResolvedConfig): Response {
+function handleConfigQuery(
+  config: ResolvedConfig,
+  requestOrigin: string | null
+): Response {
   const responseData: Record<string, unknown> = {};
 
   // Add media endpoint
   if (config.micropub?.mediaEndpoint) {
     const mediaUrl = new URL(
       config.micropub.mediaEndpoint,
-      config.siteUrl,
+      config.siteUrl
     ).toString();
     responseData["media-endpoint"] = mediaUrl;
   }
@@ -159,19 +208,25 @@ function handleConfigQuery(config: ResolvedConfig): Response {
       headers: { "Content-Type": "application/json" },
     }),
     config.security?.allowedOrigins,
+    requestOrigin
   );
 }
 
 /**
  * Handle source query
  */
-async function handleSourceQuery(url: URL, config: ResolvedConfig): Promise<Response> {
+async function handleSourceQuery(
+  url: URL,
+  config: ResolvedConfig,
+  requestOrigin: string | null
+): Promise<Response> {
   const sourceUrl = url.searchParams.get("url");
 
   if (!sourceUrl) {
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "Missing url parameter"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 
@@ -180,6 +235,7 @@ async function handleSourceQuery(url: URL, config: ResolvedConfig): Promise<Resp
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "URL must be absolute"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 
@@ -189,13 +245,14 @@ async function handleSourceQuery(url: URL, config: ResolvedConfig): Promise<Resp
   try {
     const entry = await config.storage.adapter.getPost(
       sourceUrl,
-      properties.length > 0 ? properties : undefined,
+      properties.length > 0 ? properties : undefined
     );
 
     if (!entry) {
       return addCorsHeaders(
         createErrorResponse(404, "not_found", "Post not found"),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
@@ -205,11 +262,13 @@ async function handleSourceQuery(url: URL, config: ResolvedConfig): Promise<Resp
         headers: { "Content-Type": "application/json" },
       }),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   } catch {
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to retrieve post"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 }
@@ -217,7 +276,10 @@ async function handleSourceQuery(url: URL, config: ResolvedConfig): Promise<Resp
 /**
  * Handle syndicate-to query
  */
-function handleSyndicateToQuery(config: ResolvedConfig): Response {
+function handleSyndicateToQuery(
+  config: ResolvedConfig,
+  requestOrigin: string | null
+): Response {
   const targets = config.micropub?.syndicationTargets || [];
 
   return addCorsHeaders(
@@ -228,9 +290,10 @@ function handleSyndicateToQuery(config: ResolvedConfig): Response {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      },
+      }
     ),
     config.security?.allowedOrigins,
+    requestOrigin
   );
 }
 
@@ -242,13 +305,21 @@ async function handleCreate(
   _files: File[] | undefined,
   verification: TokenVerificationResult,
   config: ResolvedConfig,
+  requestOrigin: string | null
 ): Promise<Response> {
   // Check for create scope
   if (
     config.security?.requireScope &&
     !hasScope(verification.scope, "create")
   ) {
-    return createAuthError(403, "insufficient_scope", undefined, "create");
+    return createAuthError(
+      403,
+      "insufficient_scope",
+      undefined,
+      "create",
+      requestOrigin,
+      config.security?.allowedOrigins
+    );
   }
 
   let entry: MicroformatsEntry;
@@ -266,25 +337,29 @@ async function handleCreate(
         createErrorResponse(
           400,
           "invalid_request",
-          "Missing required fields (type and properties, or h)",
+          "Missing required fields (type and properties, or h)"
         ),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
     // Validate required content
     if (
-      !entry.properties.content &&
-      !entry.properties.name &&
-      !entry.properties.photo
+      !(
+        entry.properties.content ||
+        entry.properties.name ||
+        entry.properties.photo
+      )
     ) {
       return addCorsHeaders(
         createErrorResponse(
           400,
           "invalid_request",
-          "Post must have content, name, or photo",
+          "Post must have content, name, or photo"
         ),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
@@ -300,18 +375,21 @@ async function handleCreate(
         },
       }),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   } catch (error) {
     if (error instanceof Error && error.name === "ZodError") {
       return addCorsHeaders(
         createErrorResponse(400, "invalid_request", "Invalid entry format"),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to create post"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 }
@@ -323,41 +401,50 @@ async function handleAction(
   data: Record<string, unknown>,
   verification: TokenVerificationResult,
   config: ResolvedConfig,
+  requestOrigin: string | null
 ): Promise<Response> {
   try {
     const action = validateMicropubAction(data);
 
     switch (action.action) {
-    case "update":
-      return await handleUpdate(action, verification, config);
+      case "update":
+        return await handleUpdate(action, verification, config, requestOrigin);
 
-    case "delete":
-      return await handleDelete(action, verification, config);
+      case "delete":
+        return await handleDelete(action, verification, config, requestOrigin);
 
-    case "undelete":
-      return await handleUndelete(action, verification, config);
+      case "undelete":
+        return await handleUndelete(
+          action,
+          verification,
+          config,
+          requestOrigin
+        );
 
-    default:
-      return addCorsHeaders(
-        createErrorResponse(
-          400,
-          "invalid_request",
-          `Unknown action: ${data.action}`,
-        ),
-        config.security?.allowedOrigins,
-      );
+      default:
+        return addCorsHeaders(
+          createErrorResponse(
+            400,
+            "invalid_request",
+            `Unknown action: ${data.action}`
+          ),
+          config.security?.allowedOrigins,
+          requestOrigin
+        );
     }
   } catch (error) {
     if (error instanceof Error && error.name === "ZodError") {
       return addCorsHeaders(
         createErrorResponse(400, "invalid_request", "Invalid action format"),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to perform action"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 }
@@ -369,19 +456,28 @@ async function handleUpdate(
   action: MicropubActionRequest & { action: "update" },
   verification: TokenVerificationResult,
   config: ResolvedConfig,
+  requestOrigin: string | null
 ): Promise<Response> {
   // Check for update scope
   if (
     config.security?.requireScope &&
     !hasScope(verification.scope, "update")
   ) {
-    return createAuthError(403, "insufficient_scope", undefined, "update");
+    return createAuthError(
+      403,
+      "insufficient_scope",
+      undefined,
+      "update",
+      requestOrigin,
+      config.security?.allowedOrigins
+    );
   }
 
   if (!config.micropub?.enableUpdates) {
     return addCorsHeaders(
       createErrorResponse(403, "forbidden", "Updates are disabled"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 
@@ -390,7 +486,22 @@ async function handleUpdate(
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "URL must be absolute"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
+  }
+
+  // Validate URL belongs to this site
+  try {
+    validateUrlOwnership(action.url, config.site.me);
+  } catch (error) {
+    if (error instanceof UrlOwnershipError) {
+      return addCorsHeaders(
+        createErrorResponse(403, "forbidden", error.message),
+        config.security?.allowedOrigins,
+        requestOrigin
+      );
+    }
+    throw error;
   }
 
   try {
@@ -403,19 +514,21 @@ async function handleUpdate(
     return addCorsHeaders(
       new Response(null, { status: 204 }),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    if (message.includes("not found")) {
+    if (isNotFoundError(error)) {
       return addCorsHeaders(
         createErrorResponse(404, "not_found", "Post not found"),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to update post"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 }
@@ -427,19 +540,28 @@ async function handleDelete(
   action: MicropubActionRequest & { action: "delete" },
   verification: TokenVerificationResult,
   config: ResolvedConfig,
+  requestOrigin: string | null
 ): Promise<Response> {
   // Check for delete scope
   if (
     config.security?.requireScope &&
     !hasScope(verification.scope, "delete")
   ) {
-    return createAuthError(403, "insufficient_scope", undefined, "delete");
+    return createAuthError(
+      403,
+      "insufficient_scope",
+      undefined,
+      "delete",
+      requestOrigin,
+      config.security?.allowedOrigins
+    );
   }
 
   if (!config.micropub?.enableDeletes) {
     return addCorsHeaders(
       createErrorResponse(403, "forbidden", "Deletes are disabled"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 
@@ -448,7 +570,22 @@ async function handleDelete(
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "URL must be absolute"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
+  }
+
+  // Validate URL belongs to this site
+  try {
+    validateUrlOwnership(action.url, config.site.me);
+  } catch (error) {
+    if (error instanceof UrlOwnershipError) {
+      return addCorsHeaders(
+        createErrorResponse(403, "forbidden", error.message),
+        config.security?.allowedOrigins,
+        requestOrigin
+      );
+    }
+    throw error;
   }
 
   try {
@@ -457,19 +594,21 @@ async function handleDelete(
     return addCorsHeaders(
       new Response(null, { status: 204 }),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    if (message.includes("not found")) {
+    if (isNotFoundError(error)) {
       return addCorsHeaders(
         createErrorResponse(404, "not_found", "Post not found"),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to delete post"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 }
@@ -481,19 +620,28 @@ async function handleUndelete(
   action: MicropubActionRequest & { action: "undelete" },
   verification: TokenVerificationResult,
   config: ResolvedConfig,
+  requestOrigin: string | null
 ): Promise<Response> {
   // Check for delete scope (undelete requires same permission as delete)
   if (
     config.security?.requireScope &&
     !hasScope(verification.scope, "delete")
   ) {
-    return createAuthError(403, "insufficient_scope", undefined, "delete");
+    return createAuthError(
+      403,
+      "insufficient_scope",
+      undefined,
+      "delete",
+      requestOrigin,
+      config.security?.allowedOrigins
+    );
   }
 
   if (!config.micropub?.enableDeletes) {
     return addCorsHeaders(
       createErrorResponse(403, "forbidden", "Undelete is disabled"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 
@@ -502,7 +650,22 @@ async function handleUndelete(
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "URL must be absolute"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
+  }
+
+  // Validate URL belongs to this site
+  try {
+    validateUrlOwnership(action.url, config.site.me);
+  } catch (error) {
+    if (error instanceof UrlOwnershipError) {
+      return addCorsHeaders(
+        createErrorResponse(403, "forbidden", error.message),
+        config.security?.allowedOrigins,
+        requestOrigin
+      );
+    }
+    throw error;
   }
 
   try {
@@ -511,19 +674,21 @@ async function handleUndelete(
     return addCorsHeaders(
       new Response(null, { status: 204 }),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    if (message.includes("not found")) {
+    if (isNotFoundError(error)) {
       return addCorsHeaders(
         createErrorResponse(404, "not_found", "Post not found"),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to undelete post"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 }

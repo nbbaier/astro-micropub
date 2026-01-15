@@ -1,23 +1,42 @@
 import type { APIRoute } from "astro";
 import { withAuth } from "../lib/token-verification.js";
 import {
-  createAuthError,
-  createErrorResponse,
-  createCorsPreflightResponse,
   addCorsHeaders,
-  getRuntimeConfig,
+  createAuthError,
+  createCorsPreflightResponse,
+  createErrorResponse,
   generateSafeFilename,
+  getRuntimeConfig,
 } from "../lib/utils.js";
+import type { MediaStorageAdapter } from "../storage/adapter.js";
 import { hasScope } from "../validators/scopes.js";
+
+/**
+ * Type guard to check if an adapter implements MediaStorageAdapter
+ */
+function isMediaStorageAdapter(
+  adapter: unknown
+): adapter is MediaStorageAdapter {
+  return (
+    adapter !== null &&
+    typeof adapter === "object" &&
+    "saveFile" in adapter &&
+    typeof (adapter as MediaStorageAdapter).saveFile === "function"
+  );
+}
 
 export const prerender = false;
 
 /**
  * OPTIONS - CORS preflight
  */
-export const OPTIONS: APIRoute = async () => {
+export const OPTIONS: APIRoute = ({ request }) => {
   const config = getRuntimeConfig();
-  return createCorsPreflightResponse(config.security?.allowedOrigins);
+  const requestOrigin = request.headers.get("origin");
+  return createCorsPreflightResponse(
+    config.security?.allowedOrigins,
+    requestOrigin
+  );
 };
 
 /**
@@ -25,16 +44,24 @@ export const OPTIONS: APIRoute = async () => {
  */
 export const POST: APIRoute = async ({ request }) => {
   const config = getRuntimeConfig();
+  const requestOrigin = request.headers.get("origin");
 
   // Verify authentication
   const auth = await withAuth(
     request,
     config.indieauth.tokenEndpoint,
-    config.indieauth.tokenVerificationCache,
+    config.indieauth.tokenVerificationCache
   );
 
-  if (!auth.authorized || !auth.verification) {
-    return createAuthError(401, "invalid_token");
+  if (!(auth.authorized && auth.verification)) {
+    return createAuthError(
+      401,
+      "invalid_token",
+      undefined,
+      undefined,
+      requestOrigin,
+      config.security?.allowedOrigins
+    );
   }
 
   // Check for media scope (STRICT - media scope is required, not just create)
@@ -42,7 +69,14 @@ export const POST: APIRoute = async ({ request }) => {
     config.security?.requireScope &&
     !hasScope(auth.verification.scope, "media")
   ) {
-    return createAuthError(403, "insufficient_scope", undefined, "media");
+    return createAuthError(
+      403,
+      "insufficient_scope",
+      undefined,
+      "media",
+      requestOrigin,
+      config.security?.allowedOrigins
+    );
   }
 
   try {
@@ -54,6 +88,7 @@ export const POST: APIRoute = async ({ request }) => {
       return addCorsHeaders(
         createErrorResponse(400, "invalid_request", "No file provided"),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
@@ -64,19 +99,19 @@ export const POST: APIRoute = async ({ request }) => {
         createErrorResponse(
           413,
           "invalid_request",
-          `File exceeds maximum size of ${maxSize} bytes`,
+          `File exceeds maximum size of ${maxSize} bytes`
         ),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
-    // Validate file type
+    // Validate file type (SVG excluded by default due to XSS risk)
     const allowedTypes = config.security?.allowedMimeTypes || [
       "image/jpeg",
       "image/png",
       "image/gif",
       "image/webp",
-      "image/svg+xml",
     ];
 
     if (!allowedTypes.includes(file.type)) {
@@ -84,9 +119,10 @@ export const POST: APIRoute = async ({ request }) => {
         createErrorResponse(
           415,
           "invalid_request",
-          `File type ${file.type} is not allowed`,
+          `File type ${file.type} is not allowed`
         ),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
@@ -96,19 +132,20 @@ export const POST: APIRoute = async ({ request }) => {
     // Get media adapter (default to main storage adapter if no separate media adapter)
     const mediaAdapter = config.storage.mediaAdapter ?? config.storage.adapter;
 
-    if (!("saveFile" in mediaAdapter)) {
+    if (!isMediaStorageAdapter(mediaAdapter)) {
       return addCorsHeaders(
         createErrorResponse(
           500,
           "server_error",
-          "Media storage not configured",
+          "Media storage not configured"
         ),
         config.security?.allowedOrigins,
+        requestOrigin
       );
     }
 
     // Save file
-    const absoluteUrl = await (mediaAdapter as { saveFile: (file: File, filename: string) => Promise<string> }).saveFile(file, filename);
+    const absoluteUrl = await mediaAdapter.saveFile(file, filename);
 
     // Return 201 Created with Location header
     return addCorsHeaders(
@@ -119,11 +156,13 @@ export const POST: APIRoute = async ({ request }) => {
         },
       }),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   } catch {
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to upload file"),
       config.security?.allowedOrigins,
+      requestOrigin
     );
   }
 };
