@@ -1,135 +1,141 @@
-import { describe, it, expect } from 'vitest';
-import { parseFormEncoded, formToMicroformats } from '../../src/lib/parsers.js';
+import { describe, expect, it } from "vitest";
+import { formToMicroformats, parseFormEncoded } from "../../src/lib/parsers.js";
 
-describe('parseFormEncoded', () => {
-  it('should parse simple form data', () => {
-    const result = parseFormEncoded('h=entry&content=Hello+World');
+describe("parseFormEncoded", () => {
+  it("should parse simple form data", () => {
+    const result = parseFormEncoded("h=entry&content=Hello+World");
     expect(result).toEqual({
-      h: 'entry',
-      content: 'Hello World',
+      h: "entry",
+      content: "Hello World",
     });
   });
 
-  it('should handle array notation with brackets', () => {
-    const result = parseFormEncoded('category[]=foo&category[]=bar&category[]=baz');
+  it("should handle array notation with brackets", () => {
+    const result = parseFormEncoded(
+      "category[]=foo&category[]=bar&category[]=baz"
+    );
     expect(result).toEqual({
-      category: ['foo', 'bar', 'baz'],
+      category: ["foo", "bar", "baz"],
     });
   });
 
-  it('should handle mixed arrays and scalars', () => {
-    const result = parseFormEncoded('h=entry&content=Test&category[]=web&category[]=indieweb');
+  it("should handle mixed arrays and scalars", () => {
+    const result = parseFormEncoded(
+      "h=entry&content=Test&category[]=web&category[]=indieweb"
+    );
     expect(result).toEqual({
-      h: 'entry',
-      content: 'Test',
-      category: ['web', 'indieweb'],
+      h: "entry",
+      content: "Test",
+      category: ["web", "indieweb"],
     });
   });
 
-  it('should convert duplicate keys to arrays', () => {
-    const result = parseFormEncoded('tag=foo&tag=bar');
+  it("should convert duplicate keys to arrays", () => {
+    const result = parseFormEncoded("tag=foo&tag=bar");
     expect(result).toEqual({
-      tag: ['foo', 'bar'],
+      tag: ["foo", "bar"],
     });
   });
 
-  it('should handle URL encoded values', () => {
-    const result = parseFormEncoded('content=Hello%20World%21&url=https%3A%2F%2Fexample.com');
+  it("should handle URL encoded values", () => {
+    const result = parseFormEncoded(
+      "content=Hello%20World%21&url=https%3A%2F%2Fexample.com"
+    );
     expect(result).toEqual({
-      content: 'Hello World!',
-      url: 'https://example.com',
+      content: "Hello World!",
+      url: "https://example.com",
     });
   });
 
-  it('should handle empty values', () => {
-    const result = parseFormEncoded('h=entry&content=');
+  it("should handle empty values", () => {
+    const result = parseFormEncoded("h=entry&content=");
     expect(result).toEqual({
-      h: 'entry',
-      content: '',
+      h: "entry",
+      content: "",
     });
   });
 });
 
-describe('formToMicroformats', () => {
-  it('should convert simple form data to MF2', () => {
+describe("formToMicroformats", () => {
+  it("should convert simple form data to MF2", () => {
     const result = formToMicroformats({
-      h: 'entry',
-      content: 'Hello World',
+      h: "entry",
+      content: "Hello World",
     });
 
     expect(result).toEqual({
-      type: ['h-entry'],
+      type: ["h-entry"],
       properties: {
-        content: ['Hello World'],
+        content: ["Hello World"],
       },
     });
   });
 
-  it('should handle arrays in properties', () => {
+  it("should handle arrays in properties", () => {
     const result = formToMicroformats({
-      h: 'entry',
-      content: 'Test post',
-      category: ['foo', 'bar'],
+      h: "entry",
+      content: "Test post",
+      category: ["foo", "bar"],
     });
 
     expect(result).toEqual({
-      type: ['h-entry'],
+      type: ["h-entry"],
       properties: {
-        content: ['Test post'],
-        category: ['foo', 'bar'],
+        content: ["Test post"],
+        category: ["foo", "bar"],
       },
     });
   });
 
-  it('should skip h and action fields', () => {
+  it("should skip h and action fields", () => {
     const result = formToMicroformats({
-      h: 'entry',
-      action: 'create',
-      content: 'Test',
+      h: "entry",
+      action: "create",
+      content: "Test",
     });
 
     expect(result).toEqual({
-      type: ['h-entry'],
+      type: ["h-entry"],
       properties: {
-        content: ['Test'],
+        content: ["Test"],
       },
     });
   });
 
-  it('should convert scalar values to arrays', () => {
+  it("should convert scalar values to arrays", () => {
     const result = formToMicroformats({
-      h: 'entry',
-      name: 'Post Title',
-      content: 'Post content',
+      h: "entry",
+      name: "Post Title",
+      content: "Post content",
     });
 
     expect(result).toEqual({
-      type: ['h-entry'],
+      type: ["h-entry"],
       properties: {
-        name: ['Post Title'],
-        content: ['Post content'],
+        name: ["Post Title"],
+        content: ["Post content"],
       },
     });
   });
 
-  it('should default to h-entry if h is not specified', () => {
+  it("should default to h-entry if h is not specified", () => {
     const result = formToMicroformats({
-      content: 'Hello',
+      content: "Hello",
     });
 
-    expect(result.type).toEqual(['h-entry']);
+    expect(result.type).toEqual(["h-entry"]);
   });
 
-  it('should handle custom post types', () => {
+  it("should handle custom post types", () => {
     const result = formToMicroformats({
-      h: 'event',
-      name: 'My Event',
+      h: "event",
+      name: "My Event",
     });
 
     expect(result).toEqual({
-      type: ['h-event'],
+      type: ["h-event"],
       properties: {
-        name: ['My Event'],
+        name: ["My Event"],
       },
     });
   });
