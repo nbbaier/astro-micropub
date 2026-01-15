@@ -1,21 +1,20 @@
 export type {
-  MicroformatsEntry,
-  UpdateOperation,
-  PostMetadata,
-  TokenVerificationResult,
-  SyndicationTarget,
-  MicropubAction,
-  MicropubQuery,
-} from "./micropub.js";
-
-export type {
-  MicropubConfig,
-  IndieAuthConfig,
-  StorageConfig,
+  AstroMicropubConfig,
   DiscoveryConfig,
+  IndieAuthConfig,
+  MicropubConfig,
   RateLimitConfig,
+  ResolvedConfig,
   SecurityConfig,
   SiteConfig,
-  AstroMicropubConfig,
-  ResolvedConfig,
+  StorageConfig,
 } from "./config.js";
+export type {
+  MicroformatsEntry,
+  MicropubAction,
+  MicropubQuery,
+  PostMetadata,
+  SyndicationTarget,
+  TokenVerificationResult,
+  UpdateOperation,
+} from "./micropub.js";

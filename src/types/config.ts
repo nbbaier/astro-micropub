@@ -1,6 +1,6 @@
 import type {
-  MicropubStorageAdapter,
   MediaStorageAdapter,
+  MicropubStorageAdapter,
 } from "../storage/adapter.js";
 import type { SyndicationTarget } from "./micropub.js";
 

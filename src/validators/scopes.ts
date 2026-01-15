@@ -22,7 +22,7 @@ export function hasScope(scopeString: string, requiredScope: string): boolean {
  */
 export function hasAnyScope(
   scopeString: string,
-  requiredScopes: string[],
+  requiredScopes: string[]
 ): boolean {
   const scopes = scopeString.split(" ").filter(Boolean);
   return requiredScopes.some((required) => scopes.includes(required));
@@ -33,7 +33,7 @@ export function hasAnyScope(
  */
 export function hasAllScopes(
   scopeString: string,
-  requiredScopes: string[],
+  requiredScopes: string[]
 ): boolean {
   const scopes = scopeString.split(" ").filter(Boolean);
   return requiredScopes.every((required) => scopes.includes(required));

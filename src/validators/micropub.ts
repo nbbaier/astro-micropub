@@ -1,11 +1,11 @@
-import { z } from "zod";
+import { z } from "astro/zod";
 
 /**
  * Microformats2 entry schema
  */
 export const microformatsEntrySchema = z.object({
   type: z.array(z.string()).min(1),
-  properties: z.record(z.array(z.any())),
+  properties: z.record(z.string(), z.array(z.any())),
 });
 
 /**
@@ -34,7 +34,7 @@ export const updateOperationSchema = z.discriminatedUnion("action", [
  */
 export const micropubCreateSchema = z.object({
   type: z.array(z.string()).min(1),
-  properties: z.record(z.array(z.any())),
+  properties: z.record(z.string(), z.array(z.any())),
 });
 
 /**
@@ -43,12 +43,12 @@ export const micropubCreateSchema = z.object({
 export const micropubUpdateSchema = z.object({
   action: z.literal("update"),
   url: z.string().url(),
-  replace: z.record(z.array(z.any())).optional(),
-  add: z.record(z.array(z.any())).optional(),
+  replace: z.record(z.string(), z.array(z.any())).optional(),
+  add: z.record(z.string(), z.array(z.any())).optional(),
   delete: z
     .union([
       z.array(z.string()), // Delete entire properties
-      z.record(z.array(z.any())), // Delete specific values
+      z.record(z.string(), z.array(z.any())), // Delete specific values
     ])
     .optional(),
 });
@@ -100,7 +100,7 @@ export function validateMicropubAction(data: unknown) {
 import type { UpdateOperation } from "../types/micropub.js";
 
 export function convertToUpdateOperations(
-  update: z.infer<typeof micropubUpdateSchema>,
+  update: z.infer<typeof micropubUpdateSchema>
 ): UpdateOperation[] {
   const operations: UpdateOperation[] = [];
 
