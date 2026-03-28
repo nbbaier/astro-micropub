@@ -125,7 +125,7 @@ function resolveConfig(
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.error("Invalid Micropub configuration:");
-      for (const err of error.errors) {
+      for (const err of error.issues) {
         logger.error(`  - ${err.path.join(".")}: ${err.message}`);
       }
       throw new Error(

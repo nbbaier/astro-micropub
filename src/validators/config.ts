@@ -65,7 +65,7 @@ export const securityConfigSchema = z.object({
     // Note: SVG excluded by default due to XSS risk (can contain JavaScript)
   ]),
   rateLimit: rateLimitConfigSchema.optional(),
-  sanitizeHtml: z.function().args(z.string()).returns(z.string()).optional(),
+  sanitizeHtml: z.custom<(input: string) => string>((v) => typeof v === "function").optional(),
 });
 
 /**
@@ -90,14 +90,28 @@ export const siteConfigSchema = z.object({
  * Complete integration configuration schema
  */
 export const astroMicropubConfigSchema = z.object({
-  micropub: micropubConfigSchema.optional().default(() => ({})),
+  micropub: micropubConfigSchema.optional().default(() => ({
+    endpoint: "/micropub",
+    mediaEndpoint: "/micropub/media",
+    enableUpdates: true,
+    enableDeletes: true,
+    syndicationTargets: [],
+  })),
   indieauth: indieAuthConfigSchema,
   storage: z.object({
     adapter: z.any(), // MicropubStorageAdapter - validated at runtime
     mediaAdapter: z.any().optional(), // MediaStorageAdapter - validated at runtime
   }),
-  discovery: discoveryConfigSchema.optional().default(() => ({})),
-  security: securityConfigSchema.optional().default(() => ({})),
+  discovery: discoveryConfigSchema.optional().default(() => ({
+    enabled: true,
+    includeHeaders: true,
+  })),
+  security: securityConfigSchema.optional().default(() => ({
+    requireScope: true,
+    allowedOrigins: ["*"],
+    maxUploadSize: 10 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+  })),
   site: siteConfigSchema,
 });
 
