@@ -98,7 +98,7 @@ export class DevFSAdapter
           : (content as { value?: string; text?: string }).value ||
             (content as { value?: string; text?: string }).text ||
             "";
-      const truncated = text.substring(0, 50).trim();
+      const truncated = text.slice(0, 50).trim();
       if (truncated) {
         return slugify(truncated, { lower: true, strict: true });
       }

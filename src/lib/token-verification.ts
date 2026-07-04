@@ -57,7 +57,7 @@ const tokenCache = new TokenCache();
 export function extractToken(request: Request): string | null {
   const authHeader = request.headers.get("authorization");
   if (authHeader?.toLowerCase().startsWith("bearer ")) {
-    return authHeader.substring(7).trim();
+    return authHeader.slice(7).trim();
   }
   return null;
 }

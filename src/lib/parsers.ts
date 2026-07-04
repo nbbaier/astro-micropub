@@ -31,15 +31,13 @@ export function parseFormEncoded(body: string): Record<string, unknown> {
         result[actualKey] = [];
       }
       (result[actualKey] as unknown[]).push(value);
-    } else if (result[key] !== undefined) {
-      // For non-array keys, if we see it again, convert to array
-      if (Array.isArray(result[key])) {
-        (result[key] as unknown[]).push(value);
-      } else {
-        result[key] = [result[key], value];
-      }
-    } else {
+    } else if (result[key] === undefined) {
       result[key] = value;
+    } else if (Array.isArray(result[key])) {
+      // For non-array keys, if we see it again, convert to array
+      (result[key] as unknown[]).push(value);
+    } else {
+      result[key] = [result[key], value];
     }
   }
 

@@ -8,10 +8,10 @@ import type { SyndicationTarget } from "./micropub.js";
  * Micropub configuration options
  */
 export interface MicropubConfig {
+  enableDeletes?: boolean;
+  enableUpdates?: boolean;
   endpoint?: string;
   mediaEndpoint?: string;
-  enableUpdates?: boolean;
-  enableDeletes?: boolean;
   syndicationTargets?: SyndicationTarget[];
 }
 
@@ -44,19 +44,19 @@ export interface DiscoveryConfig {
  * Rate limiting configuration
  */
 export interface RateLimitConfig {
-  windowMs?: number;
   maxRequests?: number;
+  windowMs?: number;
 }
 
 /**
  * Security configuration options
  */
 export interface SecurityConfig {
-  requireScope?: boolean;
+  allowedMimeTypes?: string[];
   allowedOrigins?: string[];
   maxUploadSize?: number;
-  allowedMimeTypes?: string[];
   rateLimit?: RateLimitConfig;
+  requireScope?: boolean;
   sanitizeHtml?: (html: string) => string;
 }
 
@@ -64,39 +64,39 @@ export interface SecurityConfig {
  * Site configuration options
  */
 export interface SiteConfig {
-  me: string; // REQUIRED: Site URL (canonical)
-  name?: string;
   author?: {
     name: string;
     photo?: string;
     url?: string;
   };
+  me: string; // REQUIRED: Site URL (canonical)
+  name?: string;
 }
 
 /**
  * Complete integration configuration
  */
 export interface AstroMicropubConfig {
-  micropub?: MicropubConfig;
-  indieauth: IndieAuthConfig; // REQUIRED
-  storage: StorageConfig; // REQUIRED
   discovery?: DiscoveryConfig;
+  indieauth: IndieAuthConfig; // REQUIRED
+  micropub?: MicropubConfig;
   security?: SecurityConfig;
   site: SiteConfig; // REQUIRED
+  storage: StorageConfig; // REQUIRED
 }
 
 /**
  * Internal configuration with defaults applied
  */
 export interface ResolvedConfig {
-  micropub: Required<MicropubConfig>;
-  indieauth: IndieAuthConfig;
-  storage: StorageConfig;
   discovery: Required<DiscoveryConfig>;
+  indieauth: IndieAuthConfig;
+  micropub: Required<MicropubConfig>;
   security: Required<Omit<SecurityConfig, "rateLimit" | "sanitizeHtml">> & {
     rateLimit?: RateLimitConfig;
     sanitizeHtml?: (html: string) => string;
   };
   site: SiteConfig;
   siteUrl: string;
+  storage: StorageConfig;
 }

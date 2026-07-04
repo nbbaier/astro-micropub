@@ -1,0 +1,36 @@
+---
+/// <reference path="./virtual.d.ts" />
+// biome-ignore-all lint/style/useFilenamingConvention: Astro components conventionally use PascalCase filenames.
+import { discovery } from "virtual:astro-micropub/config";
+
+/**
+ * Override the auto-injected endpoints. Any omitted value falls back to the
+ * resolved integration config. Useful for advanced setups (e.g. proxied
+ * endpoints) but not required for typical usage.
+ */
+interface Props {
+  authorizationEndpoint?: string;
+  micropub?: string;
+  micropubMedia?: string;
+  tokenEndpoint?: string;
+}
+
+const links = {
+  authorizationEndpoint:
+    Astro.props.authorizationEndpoint ?? discovery.authorizationEndpoint,
+  micropub: Astro.props.micropub ?? discovery.micropub,
+  micropubMedia: Astro.props.micropubMedia ?? discovery.micropubMedia,
+  tokenEndpoint: Astro.props.tokenEndpoint ?? discovery.tokenEndpoint,
+} satisfies Omit<typeof discovery, "enabled">;
+---
+
+{
+  discovery.enabled && (
+    <>
+      <link rel="authorization_endpoint" href={links.authorizationEndpoint} />
+      <link rel="token_endpoint" href={links.tokenEndpoint} />
+      <link rel="micropub" href={links.micropub} />
+      <link rel="micropub_media" href={links.micropubMedia} />
+    </>
+  )
+}

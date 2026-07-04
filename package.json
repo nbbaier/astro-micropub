@@ -6,11 +6,15 @@
   "exports": {
     ".": "./dist/integration.js",
     "./storage": "./dist/storage/index.js",
-    "./types": "./dist/types/index.js"
+    "./types": "./dist/types/index.js",
+    "./MicropubDiscovery.astro": "./src/components/MicropubDiscovery.astro",
+    "./routes/micropub": "./dist/routes/micropub.js",
+    "./routes/media": "./dist/routes/media.js"
   },
   "types": "./dist/integration.d.ts",
   "files": [
     "dist",
+    "src/components",
     "README.md"
   ],
   "scripts": {
@@ -34,7 +38,7 @@
   "author": "",
   "license": "MIT",
   "peerDependencies": {
-    "astro": "^4.0.0 || ^5.0.0"
+    "astro": "^4.14.0 || ^5.0.0 || ^6.0.0"
   },
   "dependencies": {
     "astro-integration-kit": "^0.20.0",

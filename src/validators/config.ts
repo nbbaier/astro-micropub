@@ -65,7 +65,9 @@ export const securityConfigSchema = z.object({
     // Note: SVG excluded by default due to XSS risk (can contain JavaScript)
   ]),
   rateLimit: rateLimitConfigSchema.optional(),
-  sanitizeHtml: z.custom<(input: string) => string>((v) => typeof v === "function").optional(),
+  sanitizeHtml: z
+    .custom<(input: string) => string>((v) => typeof v === "function")
+    .optional(),
 });
 
 /**

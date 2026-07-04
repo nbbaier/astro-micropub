@@ -1,36 +1,39 @@
-# Dependencies
-node_modules/
-
-# Build outputs
-dist/
-*.tsbuildinfo
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+_.log
+.cache
+.cache/
+.claude/settings.local.json
+.claude/worktrees
+.cursor/hooks/state/continual-learning*
 .DS_Store
-Thumbs.db
-
-# Testing
-coverage/
-
-# Logs
+.env
+.env.*.local
+.env.development.local
+.env.local
+.env.production.local
+.env.test.local
+.eslintcache
+.idea
+.idea/
+.vscode/
+*.lcov
 *.log
+*.swo
+*.swp
+*.tgz
+*.tmp
+*.tsbuildinfo
+*~
+coverage
+coverage/
+dist
+dist/
+logs
+node_modules
+node_modules/
 npm-debug.log*
+out
+pnpm-debug.log*
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+Thumbs.db
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-
-# Temporary files
-*.tmp
-.cache/
