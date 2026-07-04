@@ -51,3 +51,17 @@
 Tests use Vitest:
 - `test/unit/` - Unit tests for parsers, validators, token verification
 - `test/integration/` - Storage adapter tests
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked as GitHub Issues in `nbbaier/astro-micropub`; external PRs are not pulled into triage. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) — no repo-specific overrides. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
