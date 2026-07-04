@@ -53,12 +53,41 @@ describe("buildDiscoveryLinks", () => {
     expect(links.enabled).toBe(false);
   });
 
-  it("handles a site URL that includes a base path", () => {
+  it("resolves root-relative endpoints against the origin, ignoring any path in site", () => {
     const links = buildDiscoveryLinks(
       makeConfig({ siteUrl: "https://example.com/blog/" })
     );
 
-    // Root-relative endpoints resolve against the origin, not the base path.
+    // A path in `site` is not the same as Astro's `base`; root-relative
+    // endpoints resolve against the origin.
     expect(links.micropub).toBe("https://example.com/micropub");
+  });
+
+  it("prefixes Micropub endpoints with Astro's base path", () => {
+    const links = buildDiscoveryLinks(makeConfig(), "/blog");
+
+    expect(links.micropub).toBe("https://example.com/blog/micropub");
+    expect(links.micropubMedia).toBe("https://example.com/blog/micropub/media");
+  });
+
+  it("does not double the slash when base has a trailing slash", () => {
+    const links = buildDiscoveryLinks(makeConfig(), "/blog/");
+
+    expect(links.micropub).toBe("https://example.com/blog/micropub");
+  });
+
+  it("leaves endpoints unchanged for the default root base", () => {
+    const withDefault = buildDiscoveryLinks(makeConfig());
+    const withRoot = buildDiscoveryLinks(makeConfig(), "/");
+
+    expect(withDefault.micropub).toBe("https://example.com/micropub");
+    expect(withRoot.micropub).toBe("https://example.com/micropub");
+  });
+
+  it("does not apply the base path to external IndieAuth endpoints", () => {
+    const links = buildDiscoveryLinks(makeConfig(), "/blog");
+
+    expect(links.authorizationEndpoint).toBe("https://indieauth.com/auth");
+    expect(links.tokenEndpoint).toBe("https://tokens.indieauth.com/token");
   });
 });

@@ -24,7 +24,7 @@ export default defineIntegration({
             name: "astro-micropub",
             imports: {
               "virtual:astro-micropub/config": `export const discovery = ${JSON.stringify(
-                buildDiscoveryLinks(resolvedConfig)
+                buildDiscoveryLinks(resolvedConfig, config.base)
               )};`,
             },
           });
