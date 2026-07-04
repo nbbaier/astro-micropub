@@ -6,17 +6,23 @@
 - **Test**: `bun run test` (runs `vitest`). Single test: `bun x vitest test/unit/parsers.test.ts`
 - **Lint/Format**: `bun x ultracite fix` (uses Biome)
 - **Check**: `bun x ultracite check`
+- **Diagnose Ultracite setup**: `bun x ultracite doctor`
 
 ## Code Style
 
 - **Imports**: Use ES modules with explicit `.js` extensions for local imports (e.g., `import { x } from './utils.js'`).
-- **Formatting**: Uses Biome via Ultracite. 2 spaces indent. Semicolons required.
-- **Naming**: camelCase for functions/vars, PascalCase for types/classes.
-- **Types**: strict TypeScript. Avoid `any`. Use `zod` for validation.
-- **Error Handling**: Use `try/catch`. Return standard error responses using helpers in `src/lib/utils.ts`.
+- **Formatting**: Uses Biome via Ultracite. 2 spaces indent. Semicolons required. Run `bun x ultracite fix` before committing.
+- **Naming**: camelCase for functions/vars, PascalCase for types/classes. Use meaningful names instead of magic numbers.
+- **Types**: strict TypeScript. Avoid `any`; prefer `unknown` when genuinely unknown. Use `zod` for validation. Use `as const` for immutable/literal values and type narrowing over assertions.
+- **Modern JS/TS**: arrow functions for callbacks, `for...of` over `.forEach()`/indexed loops, optional chaining/nullish coalescing, template literals, destructuring, `const` by default (`let` only when reassigned, never `var`).
+- **Async**: always `await` promises, use `async/await` over promise chains, no async Promise executors.
+- **Error Handling**: Use `try/catch` meaningfully (don't catch just to rethrow). Throw `Error` objects with descriptive messages. Return standard error responses using helpers in `src/lib/utils.ts`. Prefer early returns over nested conditionals.
+- **Security**: `rel="noopener"` on `target="_blank"` links; avoid `dangerouslySetInnerHTML`, `eval()`, direct `document.cookie` writes; validate/sanitize user input.
+- **Performance**: no spread in loop accumulators; top-level regex literals (not built in loops); specific imports over namespace imports; avoid barrel files.
 - **Conventions**:
   - `src/routes/` for Astro API endpoints (export `GET`, `POST`, etc.).
   - `src/validators/` for input validation logic.
+  - No `console.log`/`debugger`/`alert` in production code.
 
 ## Project Overview
 
@@ -51,6 +57,7 @@
 Tests use Vitest:
 - `test/unit/` - Unit tests for parsers, validators, token verification
 - `test/integration/` - Storage adapter tests
+- Assertions live inside `it()`/`test()` blocks; no `.only`/`.skip` in committed code; avoid done-callback style, use async/await; keep `describe` nesting flat.
 
 ## Agent skills
 
