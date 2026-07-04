@@ -90,4 +90,22 @@ describe("buildDiscoveryLinks", () => {
     expect(links.authorizationEndpoint).toBe("https://indieauth.com/auth");
     expect(links.tokenEndpoint).toBe("https://tokens.indieauth.com/token");
   });
+
+  it("does not double the base prefix when the endpoint already includes it", () => {
+    const links = buildDiscoveryLinks(
+      makeConfig({
+        micropub: {
+          endpoint: "/blog/micropub",
+          mediaEndpoint: "/blog/micropub/media",
+          enableUpdates: true,
+          enableDeletes: true,
+          syndicationTargets: [],
+        },
+      }),
+      "/blog"
+    );
+
+    expect(links.micropub).toBe("https://example.com/blog/micropub");
+    expect(links.micropubMedia).toBe("https://example.com/blog/micropub/media");
+  });
 });

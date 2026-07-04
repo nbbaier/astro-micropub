@@ -21,10 +21,24 @@ export interface DiscoveryLinks {
  * Join Astro's `base` path with a site-relative endpoint, collapsing any
  * duplicate slash between them. `base` defaults to "/" and only contributes a
  * prefix when the site is deployed under a subpath (e.g. `/blog`).
+ *
+ * If the endpoint is already base-prefixed (a user configured
+ * `micropub.endpoint`/`mediaEndpoint` to include the base themselves), the
+ * prefix is not applied a second time, since the injected route pattern is
+ * only base-prefixed once.
  */
 function joinBasePath(base: string, endpoint: string): string {
   const prefix = base.replace(TRAILING_SLASHES, "");
   const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
+  if (!prefix) {
+    return path;
+  }
+
+  if (path === prefix || path.startsWith(`${prefix}/`)) {
+    return path;
+  }
+
   return `${prefix}${path}`;
 }
 
