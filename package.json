@@ -6,11 +6,13 @@
   "exports": {
     ".": "./dist/integration.js",
     "./storage": "./dist/storage/index.js",
-    "./types": "./dist/types/index.js"
+    "./types": "./dist/types/index.js",
+    "./MicropubDiscovery.astro": "./src/components/MicropubDiscovery.astro"
   },
   "types": "./dist/integration.d.ts",
   "files": [
     "dist",
+    "src/components",
     "README.md"
   ],
   "scripts": {

@@ -1,5 +1,6 @@
 import { z } from "astro/zod";
-import { defineIntegration } from "astro-integration-kit";
+import { addVirtualImports, defineIntegration } from "astro-integration-kit";
+import { buildDiscoveryLinks } from "./lib/discovery.js";
 import type { ResolvedConfig } from "./types/config.js";
 import {
   astroMicropubConfigSchema,
@@ -18,6 +19,15 @@ export default defineIntegration({
           const siteUrl = validateSiteConfig(config.site?.toString(), logger);
 
           const resolvedConfig = resolveConfig(options, siteUrl, logger);
+
+          addVirtualImports(params, {
+            name: "astro-micropub",
+            imports: {
+              "virtual:astro-micropub/config": `export const discovery = ${JSON.stringify(
+                buildDiscoveryLinks(resolvedConfig)
+              )};`,
+            },
+          });
 
           logger.info("Configuring Micropub integration...");
 

@@ -59,11 +59,14 @@ export default defineConfig({
 
 ### Step 2: Add Discovery Links
 
-Add IndieAuth discovery links to your site's `<head>` section. Create or edit your base layout:
+Micropub clients discover your endpoints from `<link>` tags in your site's
+`<head>`. The integration ships a component that emits them for you, populated
+from your config at build time — no hardcoded URLs to keep in sync.
 
 ```astro
 ---
 // src/layouts/BaseLayout.astro
+import MicropubDiscovery from 'astro-micropub/MicropubDiscovery.astro';
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -72,19 +75,38 @@ Add IndieAuth discovery links to your site's `<head>` section. Create or edit yo
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{Astro.props.title}</title>
 
-  <!-- IndieAuth endpoints -->
-  <link rel="authorization_endpoint" href="https://indieauth.com/auth">
-  <link rel="token_endpoint" href="https://tokens.indieauth.com/token">
-
-  <!-- Micropub endpoint (auto-discovered) -->
-  <link rel="micropub" href="https://yourdomain.com/micropub">
-  <link rel="micropub_media" href="https://yourdomain.com/micropub/media">
+  <!-- Emits rel="micropub", rel="micropub_media", rel="authorization_endpoint",
+       and rel="token_endpoint" using your resolved integration config. -->
+  <MicropubDiscovery />
 </head>
 <body>
   <slot />
 </body>
 </html>
 ```
+
+The endpoints come from your `astro.config.mjs` — Micropub endpoints are
+resolved to absolute URLs against `site`, and the IndieAuth endpoints are taken
+from your `indieauth` config. Setting `discovery.enabled: false` suppresses the
+tags entirely. You can override any individual endpoint via props (e.g.
+`<MicropubDiscovery micropub="https://proxy.example/mp" />`) for advanced setups.
+
+<details>
+<summary>Prefer to add the links by hand?</summary>
+
+```astro
+<link rel="authorization_endpoint" href="https://indieauth.com/auth">
+<link rel="token_endpoint" href="https://tokens.indieauth.com/token">
+<link rel="micropub" href="https://yourdomain.com/micropub">
+<link rel="micropub_media" href="https://yourdomain.com/micropub/media">
+```
+
+</details>
+
+> **TypeScript:** the component imports from a virtual module provided by the
+> integration. If your editor flags the import, ensure `astro-micropub` is in
+> your project's dependencies — the shipped component carries its own ambient
+> types for the virtual module.
 
 ### Step 3: Create Content Collection (Optional)
 
