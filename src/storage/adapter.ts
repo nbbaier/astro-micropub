@@ -16,6 +16,12 @@ export interface MicropubStorageAdapter {
   createPost(entry: MicroformatsEntry): Promise<PostMetadata>;
 
   /**
+   * Delete a post (soft delete)
+   * @param url - Absolute URL of the post
+   */
+  deletePost(url: string): Promise<void>;
+
+  /**
    * Retrieve a post by URL
    * @param url - Absolute URL of the post
    * @param properties - Optional array of properties to filter
@@ -27,24 +33,18 @@ export interface MicropubStorageAdapter {
   ): Promise<MicroformatsEntry | null>;
 
   /**
+   * Restore a deleted post
+   * @param url - Absolute URL of the post
+   */
+  undeletePost(url: string): Promise<void>;
+
+  /**
    * Update a post
    * @param url - Absolute URL of the post
    * @param operations - Array of update operations to apply
    * @returns Updated post metadata
    */
   updatePost(url: string, operations: UpdateOperation[]): Promise<PostMetadata>;
-
-  /**
-   * Delete a post (soft delete)
-   * @param url - Absolute URL of the post
-   */
-  deletePost(url: string): Promise<void>;
-
-  /**
-   * Restore a deleted post
-   * @param url - Absolute URL of the post
-   */
-  undeletePost(url: string): Promise<void>;
 }
 
 /**
@@ -52,16 +52,15 @@ export interface MicropubStorageAdapter {
  */
 export interface MediaStorageAdapter {
   /**
+   * Delete a media file
+   * @param url - Absolute URL of the file
+   */
+  deleteFile(url: string): Promise<void>;
+  /**
    * Save an uploaded file
    * @param file - File to save
    * @param filename - Generated filename
    * @returns Absolute URL of saved file
    */
   saveFile(file: File, filename: string): Promise<string>;
-
-  /**
-   * Delete a media file
-   * @param url - Absolute URL of the file
-   */
-  deleteFile(url: string): Promise<void>;
 }

@@ -13,7 +13,7 @@ export async function generateSafeFilename(file: File): Promise<string> {
     .createHash("sha256")
     .update(Buffer.from(buffer))
     .digest("hex");
-  const shortHash = hash.substring(0, 16);
+  const shortHash = hash.slice(0, 16);
 
   // Extract extension
   const nameParts = file.name.split(".");

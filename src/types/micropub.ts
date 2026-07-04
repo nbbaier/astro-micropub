@@ -2,10 +2,10 @@
  * Microformats2 entry representation
  */
 export interface MicroformatsEntry {
-  type: string[];
   properties: {
     [key: string]: unknown[];
   };
+  type: string[];
 }
 
 /**
@@ -20,10 +20,10 @@ export type UpdateOperation =
  * Post metadata returned by storage
  */
 export interface PostMetadata {
-  url: string; // MUST be absolute
-  published: Date;
-  modified?: Date;
   deleted?: boolean;
+  modified?: Date;
+  published: Date;
+  url: string; // MUST be absolute
 }
 
 /**
@@ -31,18 +31,18 @@ export interface PostMetadata {
  */
 export interface TokenVerificationResult {
   active: boolean;
-  me: string;
   client_id: string;
-  scope: string;
   exp?: number;
+  me: string;
+  scope: string;
 }
 
 /**
  * Syndication target configuration
  */
 export interface SyndicationTarget {
-  uid: string;
   name: string;
+  uid: string;
 }
 
 /**

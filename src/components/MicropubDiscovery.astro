@@ -15,7 +15,6 @@ interface Props {
   tokenEndpoint?: string;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: referenced in the Astro template below, which Biome does not parse.
 const links = {
   authorizationEndpoint:
     Astro.props.authorizationEndpoint ?? discovery.authorizationEndpoint,
