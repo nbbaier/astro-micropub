@@ -7,7 +7,9 @@
     ".": "./dist/integration.js",
     "./storage": "./dist/storage/index.js",
     "./types": "./dist/types/index.js",
-    "./MicropubDiscovery.astro": "./src/components/MicropubDiscovery.astro"
+    "./MicropubDiscovery.astro": "./src/components/MicropubDiscovery.astro",
+    "./routes/micropub": "./dist/routes/micropub.js",
+    "./routes/media": "./dist/routes/media.js"
   },
   "types": "./dist/integration.d.ts",
   "files": [
