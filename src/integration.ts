@@ -1,82 +1,89 @@
+import type { AstroIntegration } from "astro";
 import { z } from "astro/zod";
-import { addVirtualImports, defineIntegration } from "astro-integration-kit";
 import { buildDiscoveryLinks } from "./lib/discovery.js";
-import type { ResolvedConfig } from "./types/config.js";
-import {
-  astroMicropubConfigSchema,
-  validateConfig,
-} from "./validators/config.js";
+import type { AstroMicropubConfig, ResolvedConfig } from "./types/config.js";
+import { validateConfig } from "./validators/config.js";
 
-export default defineIntegration({
-  name: "astro-micropub",
-  optionsSchema: astroMicropubConfigSchema,
-  setup({ options }) {
-    return {
-      hooks: {
-        "astro:config:setup": (params) => {
-          const { config, logger, injectRoute, updateConfig } = params;
+const VIRTUAL_MODULE_ID = "virtual:astro-micropub/config";
+const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
 
-          const siteUrl = validateSiteConfig(config.site?.toString(), logger);
+export default function astroMicropub(
+  options: AstroMicropubConfig
+): AstroIntegration {
+  return {
+    name: "astro-micropub",
+    hooks: {
+      "astro:config:setup": (params) => {
+        const { config, logger, injectRoute, updateConfig } = params;
 
-          const resolvedConfig = resolveConfig(options, siteUrl, logger);
+        const siteUrl = validateSiteConfig(config.site?.toString(), logger);
 
-          addVirtualImports(params, {
-            name: "astro-micropub",
-            imports: {
-              "virtual:astro-micropub/config": `export const discovery = ${JSON.stringify(
-                buildDiscoveryLinks(resolvedConfig, config.base)
-              )};`,
+        const resolvedConfig = resolveConfig(options, siteUrl, logger);
+
+        const discoveryModule = `export const discovery = ${JSON.stringify(
+          buildDiscoveryLinks(resolvedConfig, config.base)
+        )};`;
+
+        logger.info("Configuring Micropub integration...");
+
+        injectRoute({
+          pattern: resolvedConfig.micropub.endpoint,
+          entrypoint: "astro-micropub/routes/micropub",
+          prerender: false,
+        });
+
+        logger.info(`Micropub endpoint: ${resolvedConfig.micropub.endpoint}`);
+
+        injectRoute({
+          pattern: resolvedConfig.micropub.mediaEndpoint,
+          entrypoint: "astro-micropub/routes/media",
+          prerender: false,
+        });
+
+        logger.info(`Media endpoint: ${resolvedConfig.micropub.mediaEndpoint}`);
+
+        updateConfig({
+          vite: {
+            define: {
+              __MICROPUB_CONFIG__: JSON.stringify({
+                micropub: resolvedConfig.micropub,
+                indieauth: resolvedConfig.indieauth,
+                discovery: resolvedConfig.discovery,
+                security: resolvedConfig.security,
+                site: resolvedConfig.site,
+                siteUrl: resolvedConfig.siteUrl,
+              }),
             },
-          });
-
-          logger.info("Configuring Micropub integration...");
-
-          injectRoute({
-            pattern: resolvedConfig.micropub.endpoint,
-            entrypoint: "astro-micropub/routes/micropub",
-            prerender: false,
-          });
-
-          logger.info(`Micropub endpoint: ${resolvedConfig.micropub.endpoint}`);
-
-          injectRoute({
-            pattern: resolvedConfig.micropub.mediaEndpoint,
-            entrypoint: "astro-micropub/routes/media",
-            prerender: false,
-          });
-
-          logger.info(
-            `Media endpoint: ${resolvedConfig.micropub.mediaEndpoint}`
-          );
-
-          updateConfig({
-            vite: {
-              define: {
-                __MICROPUB_CONFIG__: JSON.stringify({
-                  micropub: resolvedConfig.micropub,
-                  indieauth: resolvedConfig.indieauth,
-                  discovery: resolvedConfig.discovery,
-                  security: resolvedConfig.security,
-                  site: resolvedConfig.site,
-                  siteUrl: resolvedConfig.siteUrl,
-                }),
+            plugins: [
+              {
+                name: "astro-micropub:virtual-config",
+                resolveId(id) {
+                  return id === VIRTUAL_MODULE_ID
+                    ? RESOLVED_VIRTUAL_MODULE_ID
+                    : undefined;
+                },
+                load(id) {
+                  return id === RESOLVED_VIRTUAL_MODULE_ID
+                    ? discoveryModule
+                    : undefined;
+                },
               },
-            },
-          });
+            ],
+          },
+        });
 
-          logger.info("Micropub integration configured successfully");
+        logger.info("Micropub integration configured successfully");
 
-          logger.info(
-            `Using IndieAuth authorization endpoint: ${resolvedConfig.indieauth.authorizationEndpoint}`
-          );
-          logger.info(
-            `Using IndieAuth token endpoint: ${resolvedConfig.indieauth.tokenEndpoint}`
-          );
-        },
+        logger.info(
+          `Using IndieAuth authorization endpoint: ${resolvedConfig.indieauth.authorizationEndpoint}`
+        );
+        logger.info(
+          `Using IndieAuth token endpoint: ${resolvedConfig.indieauth.tokenEndpoint}`
+        );
       },
-    };
-  },
-});
+    },
+  };
+}
 
 function validateSiteConfig(
   siteUrl: string | undefined,

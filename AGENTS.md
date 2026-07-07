@@ -32,7 +32,7 @@
 
 ### Core Flow
 
-1. **Integration Setup** (`src/integration.ts`): Uses `astro-integration-kit`. Validates config with Zod, injects routes for `/micropub` and `/micropub/media`, exposes config via Vite's `define` as `__MICROPUB_CONFIG__`.
+1. **Integration Setup** (`src/integration.ts`): A plain Astro integration (default-exported factory returning an `AstroIntegration`). Validates config with Zod, injects routes for `/micropub` and `/micropub/media`, exposes config via Vite's `define` as `__MICROPUB_CONFIG__`, and serves the `virtual:astro-micropub/config` module via an inline Vite plugin.
 
 2. **Route Handlers** (`src/routes/`): `micropub.ts` (create/update/delete/query), `media.ts` (file uploads). Both use `withAuth()` for token verification.
 
