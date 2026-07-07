@@ -87,7 +87,7 @@ Expect all four tags, each an absolute URL:
 | `micropub` | `https://example.com/micropub` |
 | `micropub_media` | `https://example.com/micropub/media` |
 
-Proves the real `addVirtualImports` wiring and the `./MicropubDiscovery.astro` package export resolve in an installed consumer.
+Proves the real `virtual:astro-micropub/config` Vite plugin wiring and the `./MicropubDiscovery.astro` package export resolve in an installed consumer.
 
 ### 2. Base path
 
