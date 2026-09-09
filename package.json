@@ -50,12 +50,12 @@
     "@biomejs/biome": "2.4.9",
     "@types/busboy": "^1.5.4",
     "@types/node": "^25.5.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260328.1",
+    "@vitest/coverage-v8": "^5.0.0",
     "astro": "^6.1.1",
     "typescript": "^6.0.2",
     "ultracite": "7.3.2",
     "vite": "^8.0.3",
-    "vitest": "^4.1.2"
+    "vitest": "^5.0.0"
   },
   "repository": {
     "type": "git",
