@@ -64,8 +64,8 @@ export function formToMicroformats(
   }
 
   return {
-    type: [`h-${type}`],
     properties,
+    type: [`h-${type}`],
   };
 }
 
@@ -77,8 +77,8 @@ export async function parseJSON(
 ): Promise<Record<string, unknown>> {
   try {
     return (await request.json()) as Record<string, unknown>;
-  } catch {
-    throw new Error("Invalid JSON");
+  } catch (error) {
+    throw new Error("Invalid JSON", { cause: error });
   }
 }
 
@@ -188,7 +188,7 @@ export function getContentType(request: Request): string | null {
   }
 
   // Extract the base content type (ignore charset and other parameters)
-  return contentType.split(";")[0].trim().toLowerCase();
+  return (contentType.split(";")[0] ?? "").trim().toLowerCase();
 }
 
 /**

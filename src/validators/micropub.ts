@@ -4,8 +4,8 @@ import { z } from "astro/zod";
  * Microformats2 entry schema
  */
 export const microformatsEntrySchema = z.object({
-  type: z.array(z.string()).min(1),
   properties: z.record(z.string(), z.array(z.any())),
+  type: z.array(z.string()).min(1),
 });
 
 /**
@@ -33,8 +33,8 @@ export const updateOperationSchema = z.discriminatedUnion("action", [
  * Micropub create request schema (JSON)
  */
 export const micropubCreateSchema = z.object({
-  type: z.array(z.string()).min(1),
   properties: z.record(z.string(), z.array(z.any())),
+  type: z.array(z.string()).min(1),
 });
 
 /**
@@ -42,8 +42,6 @@ export const micropubCreateSchema = z.object({
  */
 export const micropubUpdateSchema = z.object({
   action: z.literal("update"),
-  url: z.string().url(),
-  replace: z.record(z.string(), z.array(z.any())).optional(),
   add: z.record(z.string(), z.array(z.any())).optional(),
   delete: z
     .union([
@@ -51,6 +49,8 @@ export const micropubUpdateSchema = z.object({
       z.record(z.string(), z.array(z.any())), // Delete specific values
     ])
     .optional(),
+  replace: z.record(z.string(), z.array(z.any())).optional(),
+  url: z.string().url(),
 });
 
 /**

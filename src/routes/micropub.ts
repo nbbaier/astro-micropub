@@ -44,7 +44,7 @@ export const OPTIONS: APIRoute = ({ request }) => {
   const config = getRuntimeConfig();
   const requestOrigin = request.headers.get("origin");
   return createCorsPreflightResponse(
-    config.security?.allowedOrigins,
+    config.security.allowedOrigins,
     requestOrigin
   );
 };
@@ -70,7 +70,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       undefined,
       undefined,
       requestOrigin,
-      config.security?.allowedOrigins
+      config.security.allowedOrigins
     );
   }
 
@@ -79,7 +79,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!query) {
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "Missing q parameter"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -103,14 +103,14 @@ export const GET: APIRoute = async ({ request, url }) => {
             "invalid_request",
             `Unknown query: ${query}`
           ),
-          config.security?.allowedOrigins,
+          config.security.allowedOrigins,
           requestOrigin
         );
     }
   } catch {
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Internal server error"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -137,7 +137,7 @@ export const POST: APIRoute = async ({ request }) => {
       undefined,
       undefined,
       requestOrigin,
-      config.security?.allowedOrigins
+      config.security.allowedOrigins
     );
   }
 
@@ -163,14 +163,14 @@ export const POST: APIRoute = async ({ request }) => {
     if (message.includes("content type")) {
       return addCorsHeaders(
         createErrorResponse(400, "invalid_request", message),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Internal server error"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -186,7 +186,7 @@ function handleConfigQuery(
   const responseData: Record<string, unknown> = {};
 
   // Add media endpoint
-  if (config.micropub?.mediaEndpoint) {
+  if (config.micropub.mediaEndpoint) {
     const mediaUrl = new URL(
       config.micropub.mediaEndpoint,
       config.siteUrl
@@ -195,7 +195,7 @@ function handleConfigQuery(
   }
 
   // Add syndication targets
-  if (config.micropub?.syndicationTargets?.length > 0) {
+  if (config.micropub.syndicationTargets.length > 0) {
     responseData["syndicate-to"] = config.micropub.syndicationTargets;
   }
 
@@ -204,10 +204,10 @@ function handleConfigQuery(
 
   return addCorsHeaders(
     new Response(JSON.stringify(responseData), {
-      status: 200,
       headers: { "Content-Type": "application/json" },
+      status: 200,
     }),
-    config.security?.allowedOrigins,
+    config.security.allowedOrigins,
     requestOrigin
   );
 }
@@ -225,7 +225,7 @@ async function handleSourceQuery(
   if (!sourceUrl) {
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "Missing url parameter"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -234,7 +234,7 @@ async function handleSourceQuery(
   if (!isAbsoluteUrl(sourceUrl)) {
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "URL must be absolute"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -251,23 +251,23 @@ async function handleSourceQuery(
     if (!entry) {
       return addCorsHeaders(
         createErrorResponse(404, "not_found", "Post not found"),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
 
     return addCorsHeaders(
       new Response(JSON.stringify(entry), {
-        status: 200,
         headers: { "Content-Type": "application/json" },
+        status: 200,
       }),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   } catch {
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to retrieve post"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -280,7 +280,7 @@ function handleSyndicateToQuery(
   config: ResolvedConfig,
   requestOrigin: string | null
 ): Response {
-  const targets = config.micropub?.syndicationTargets || [];
+  const targets = config.micropub.syndicationTargets;
 
   return addCorsHeaders(
     new Response(
@@ -288,11 +288,11 @@ function handleSyndicateToQuery(
         "syndicate-to": targets,
       }),
       {
-        status: 200,
         headers: { "Content-Type": "application/json" },
+        status: 200,
       }
     ),
-    config.security?.allowedOrigins,
+    config.security.allowedOrigins,
     requestOrigin
   );
 }
@@ -308,17 +308,14 @@ async function handleCreate(
   requestOrigin: string | null
 ): Promise<Response> {
   // Check for create scope
-  if (
-    config.security?.requireScope &&
-    !hasScope(verification.scope, "create")
-  ) {
+  if (config.security.requireScope && !hasScope(verification.scope, "create")) {
     return createAuthError(
       403,
       "insufficient_scope",
       undefined,
       "create",
       requestOrigin,
-      config.security?.allowedOrigins
+      config.security.allowedOrigins
     );
   }
 
@@ -339,7 +336,7 @@ async function handleCreate(
           "invalid_request",
           "Missing required fields (type and properties, or h)"
         ),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
@@ -358,7 +355,7 @@ async function handleCreate(
           "invalid_request",
           "Post must have content, name, or photo"
         ),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
@@ -369,26 +366,26 @@ async function handleCreate(
     // Return 201 Created with Location header
     return addCorsHeaders(
       new Response(null, {
-        status: 201,
         headers: {
           Location: metadata.url,
         },
+        status: 201,
       }),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   } catch (error) {
     if (error instanceof Error && error.name === "ZodError") {
       return addCorsHeaders(
         createErrorResponse(400, "invalid_request", "Invalid entry format"),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to create post"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -428,7 +425,7 @@ async function handleAction(
             "invalid_request",
             `Unknown action: ${data.action}`
           ),
-          config.security?.allowedOrigins,
+          config.security.allowedOrigins,
           requestOrigin
         );
     }
@@ -436,14 +433,14 @@ async function handleAction(
     if (error instanceof Error && error.name === "ZodError") {
       return addCorsHeaders(
         createErrorResponse(400, "invalid_request", "Invalid action format"),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to perform action"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -459,24 +456,21 @@ async function handleUpdate(
   requestOrigin: string | null
 ): Promise<Response> {
   // Check for update scope
-  if (
-    config.security?.requireScope &&
-    !hasScope(verification.scope, "update")
-  ) {
+  if (config.security.requireScope && !hasScope(verification.scope, "update")) {
     return createAuthError(
       403,
       "insufficient_scope",
       undefined,
       "update",
       requestOrigin,
-      config.security?.allowedOrigins
+      config.security.allowedOrigins
     );
   }
 
-  if (!config.micropub?.enableUpdates) {
+  if (!config.micropub.enableUpdates) {
     return addCorsHeaders(
       createErrorResponse(403, "forbidden", "Updates are disabled"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -485,7 +479,7 @@ async function handleUpdate(
   if (!isAbsoluteUrl(action.url)) {
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "URL must be absolute"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -497,7 +491,7 @@ async function handleUpdate(
     if (error instanceof UrlOwnershipError) {
       return addCorsHeaders(
         createErrorResponse(403, "forbidden", error.message),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
@@ -513,21 +507,21 @@ async function handleUpdate(
 
     return addCorsHeaders(
       new Response(null, { status: 204 }),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   } catch (error) {
     if (isNotFoundError(error)) {
       return addCorsHeaders(
         createErrorResponse(404, "not_found", "Post not found"),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to update post"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -543,24 +537,21 @@ async function handleDelete(
   requestOrigin: string | null
 ): Promise<Response> {
   // Check for delete scope
-  if (
-    config.security?.requireScope &&
-    !hasScope(verification.scope, "delete")
-  ) {
+  if (config.security.requireScope && !hasScope(verification.scope, "delete")) {
     return createAuthError(
       403,
       "insufficient_scope",
       undefined,
       "delete",
       requestOrigin,
-      config.security?.allowedOrigins
+      config.security.allowedOrigins
     );
   }
 
-  if (!config.micropub?.enableDeletes) {
+  if (!config.micropub.enableDeletes) {
     return addCorsHeaders(
       createErrorResponse(403, "forbidden", "Deletes are disabled"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -569,7 +560,7 @@ async function handleDelete(
   if (!isAbsoluteUrl(action.url)) {
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "URL must be absolute"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -581,7 +572,7 @@ async function handleDelete(
     if (error instanceof UrlOwnershipError) {
       return addCorsHeaders(
         createErrorResponse(403, "forbidden", error.message),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
@@ -593,21 +584,21 @@ async function handleDelete(
 
     return addCorsHeaders(
       new Response(null, { status: 204 }),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   } catch (error) {
     if (isNotFoundError(error)) {
       return addCorsHeaders(
         createErrorResponse(404, "not_found", "Post not found"),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to delete post"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -623,24 +614,21 @@ async function handleUndelete(
   requestOrigin: string | null
 ): Promise<Response> {
   // Check for delete scope (undelete requires same permission as delete)
-  if (
-    config.security?.requireScope &&
-    !hasScope(verification.scope, "delete")
-  ) {
+  if (config.security.requireScope && !hasScope(verification.scope, "delete")) {
     return createAuthError(
       403,
       "insufficient_scope",
       undefined,
       "delete",
       requestOrigin,
-      config.security?.allowedOrigins
+      config.security.allowedOrigins
     );
   }
 
-  if (!config.micropub?.enableDeletes) {
+  if (!config.micropub.enableDeletes) {
     return addCorsHeaders(
       createErrorResponse(403, "forbidden", "Undelete is disabled"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -649,7 +637,7 @@ async function handleUndelete(
   if (!isAbsoluteUrl(action.url)) {
     return addCorsHeaders(
       createErrorResponse(400, "invalid_request", "URL must be absolute"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }
@@ -661,7 +649,7 @@ async function handleUndelete(
     if (error instanceof UrlOwnershipError) {
       return addCorsHeaders(
         createErrorResponse(403, "forbidden", error.message),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
@@ -673,21 +661,21 @@ async function handleUndelete(
 
     return addCorsHeaders(
       new Response(null, { status: 204 }),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   } catch (error) {
     if (isNotFoundError(error)) {
       return addCorsHeaders(
         createErrorResponse(404, "not_found", "Post not found"),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
 
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to undelete post"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }

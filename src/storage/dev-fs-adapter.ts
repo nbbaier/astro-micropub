@@ -115,9 +115,10 @@ export class DevFSAdapter
     let slug = baseSlug;
     let counter = 1;
 
+    // biome-ignore lint/performance/noAwaitInLoops: each candidate depends on the previous check
     while (await this.postExists(slug)) {
       slug = `${baseSlug}-${counter}`;
-      counter++;
+      counter += 1;
     }
 
     return slug;
@@ -150,7 +151,7 @@ export class DevFSAdapter
     try {
       const urlObj = new URL(url);
       const match = urlObj.pathname.match(POST_PATH_REGEX);
-      return match ? match[1] : null;
+      return match?.[1] ?? null;
     } catch {
       return null;
     }
@@ -164,8 +165,8 @@ export class DevFSAdapter
     content: string;
   } {
     const frontmatter: Record<string, unknown> = {
-      type: entry.type[0],
       published: entry.properties.published?.[0] || new Date().toISOString(),
+      type: entry.type[0],
     };
 
     const content = this.getContent(entry, frontmatter);
@@ -174,7 +175,7 @@ export class DevFSAdapter
     this.addVisibilityToFrontmatter(entry, frontmatter);
     this.addOtherPropertiesToFrontmatter(entry, frontmatter);
 
-    return { frontmatter, content };
+    return { content, frontmatter };
   }
 
   private getContent(
@@ -225,8 +226,8 @@ export class DevFSAdapter
     const photos = entry.properties.photo;
     const alts = entry.properties["mp-photo-alt"] || [];
     frontmatter.photo = photos.map((url: unknown, i: number) => ({
-      url: String(url),
       alt: String(alts[i] || ""),
+      url: String(url),
     }));
   }
 
@@ -263,7 +264,7 @@ export class DevFSAdapter
     ];
 
     for (const [key, values] of Object.entries(entry.properties)) {
-      if (!(skip.includes(key) || key.startsWith("mp-"))) {
+      if (values && !(skip.includes(key) || key.startsWith("mp-"))) {
         frontmatter[key] = values.length === 1 ? values[0] : values;
       }
     }
@@ -331,8 +332,8 @@ export class DevFSAdapter
     }
 
     return {
-      type: [frontmatter.type || "h-entry"],
       properties,
+      type: [frontmatter.type || "h-entry"],
     };
   }
 
@@ -355,8 +356,8 @@ export class DevFSAdapter
     await fs.writeFile(filePath, fileContent, "utf-8");
 
     return {
-      url: this.slugToUrl(slug),
       published: new Date(frontmatter.published as string | number | Date),
+      url: this.slugToUrl(slug),
     };
   }
 
@@ -387,8 +388,8 @@ export class DevFSAdapter
           }
         }
         return {
-          type: entry.type,
           properties: filtered,
+          type: entry.type,
         };
       }
 
@@ -432,11 +433,11 @@ export class DevFSAdapter
 
     const publishedValue = entry.properties.published?.[0];
     return {
-      url,
-      published: new Date(
-        (publishedValue as string | number | Date) ?? Date.now()
-      ),
       modified: new Date(),
+      published: new Date(
+        (publishedValue as string | number | Date | undefined) ?? Date.now()
+      ),
+      url,
     };
   }
 
@@ -444,9 +445,9 @@ export class DevFSAdapter
    * Apply an update operation
    */
   private applyOperation(
-    properties: Record<string, unknown[]>,
+    properties: MicroformatsEntry["properties"],
     op: UpdateOperation
-  ): Record<string, unknown[]> {
+  ): MicroformatsEntry["properties"] {
     switch (op.action) {
       case "replace":
         return {
@@ -489,9 +490,9 @@ export class DevFSAdapter
   }
 
   private removeProperty(
-    properties: Record<string, unknown[]>,
+    properties: MicroformatsEntry["properties"],
     property: string
-  ): Record<string, unknown[]> {
+  ): MicroformatsEntry["properties"] {
     const { [property]: _removed, ...rest } = properties;
     return rest;
   }

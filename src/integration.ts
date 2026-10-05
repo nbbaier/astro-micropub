@@ -11,7 +11,6 @@ export default function astroMicropub(
   options: AstroMicropubConfig
 ): AstroIntegration {
   return {
-    name: "astro-micropub",
     hooks: {
       "astro:config:setup": (params) => {
         const { config, logger, injectRoute, updateConfig } = params;
@@ -27,16 +26,16 @@ export default function astroMicropub(
         logger.info("Configuring Micropub integration...");
 
         injectRoute({
-          pattern: resolvedConfig.micropub.endpoint,
           entrypoint: "astro-micropub/routes/micropub",
+          pattern: resolvedConfig.micropub.endpoint,
           prerender: false,
         });
 
         logger.info(`Micropub endpoint: ${resolvedConfig.micropub.endpoint}`);
 
         injectRoute({
-          pattern: resolvedConfig.micropub.mediaEndpoint,
           entrypoint: "astro-micropub/routes/media",
+          pattern: resolvedConfig.micropub.mediaEndpoint,
           prerender: false,
         });
 
@@ -46,9 +45,9 @@ export default function astroMicropub(
           vite: {
             define: {
               __MICROPUB_CONFIG__: JSON.stringify({
-                micropub: resolvedConfig.micropub,
-                indieauth: resolvedConfig.indieauth,
                 discovery: resolvedConfig.discovery,
+                indieauth: resolvedConfig.indieauth,
+                micropub: resolvedConfig.micropub,
                 security: resolvedConfig.security,
                 site: resolvedConfig.site,
                 siteUrl: resolvedConfig.siteUrl,
@@ -56,15 +55,15 @@ export default function astroMicropub(
             },
             plugins: [
               {
+                load(id) {
+                  return id === RESOLVED_VIRTUAL_MODULE_ID
+                    ? discoveryModule
+                    : undefined;
+                },
                 name: "astro-micropub:virtual-config",
                 resolveId(id) {
                   return id === VIRTUAL_MODULE_ID
                     ? RESOLVED_VIRTUAL_MODULE_ID
-                    : undefined;
-                },
-                load(id) {
-                  return id === RESOLVED_VIRTUAL_MODULE_ID
-                    ? discoveryModule
                     : undefined;
                 },
               },
@@ -82,6 +81,7 @@ export default function astroMicropub(
         );
       },
     },
+    name: "astro-micropub",
   };
 }
 
@@ -109,23 +109,19 @@ function resolveConfig(
     const validated = validateConfig(options);
 
     return {
-      micropub: {
-        endpoint: validated.micropub?.endpoint ?? "/micropub",
-        mediaEndpoint: validated.micropub?.mediaEndpoint ?? "/micropub/media",
-        enableUpdates: validated.micropub?.enableUpdates ?? true,
-        enableDeletes: validated.micropub?.enableDeletes ?? true,
-        syndicationTargets: validated.micropub?.syndicationTargets ?? [],
-      },
-      indieauth: validated.indieauth,
-      storage: validated.storage as ResolvedConfig["storage"],
       discovery: {
         enabled: validated.discovery?.enabled ?? true,
         includeHeaders: validated.discovery?.includeHeaders ?? true,
       },
+      indieauth: validated.indieauth,
+      micropub: {
+        enableDeletes: validated.micropub?.enableDeletes ?? true,
+        enableUpdates: validated.micropub?.enableUpdates ?? true,
+        endpoint: validated.micropub?.endpoint ?? "/micropub",
+        mediaEndpoint: validated.micropub?.mediaEndpoint ?? "/micropub/media",
+        syndicationTargets: validated.micropub?.syndicationTargets ?? [],
+      },
       security: {
-        requireScope: validated.security?.requireScope ?? true,
-        allowedOrigins: validated.security?.allowedOrigins ?? ["*"],
-        maxUploadSize: validated.security?.maxUploadSize ?? 10 * 1024 * 1024,
         allowedMimeTypes: validated.security?.allowedMimeTypes ?? [
           "image/jpeg",
           "image/png",
@@ -133,11 +129,15 @@ function resolveConfig(
           "image/webp",
           "image/svg+xml",
         ],
+        allowedOrigins: validated.security?.allowedOrigins ?? ["*"],
+        maxUploadSize: validated.security?.maxUploadSize ?? 10 * 1024 * 1024,
         rateLimit: validated.security?.rateLimit ?? undefined,
+        requireScope: validated.security?.requireScope ?? true,
         sanitizeHtml: validated.security?.sanitizeHtml ?? undefined,
       },
       site: validated.site,
       siteUrl,
+      storage: validated.storage as ResolvedConfig["storage"],
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -146,7 +146,8 @@ function resolveConfig(
         logger.error(`  - ${err.path.join(".")}: ${err.message}`);
       }
       throw new Error(
-        "Invalid Micropub configuration. Please check the errors above."
+        "Invalid Micropub configuration. Please check the errors above.",
+        { cause: error }
       );
     }
     throw error;

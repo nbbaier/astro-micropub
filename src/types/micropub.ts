@@ -3,7 +3,7 @@
  */
 export interface MicroformatsEntry {
   properties: {
-    [key: string]: unknown[];
+    [key: string]: unknown[] | undefined;
   };
   type: string[];
 }

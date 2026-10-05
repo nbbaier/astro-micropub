@@ -4,28 +4,28 @@ import type { ResolvedConfig } from "../../src/types/config.js";
 
 function makeConfig(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
   return {
-    micropub: {
-      endpoint: "/micropub",
-      mediaEndpoint: "/micropub/media",
-      enableUpdates: true,
-      enableDeletes: true,
-      syndicationTargets: [],
-    },
+    discovery: { enabled: true, includeHeaders: true },
     indieauth: {
       authorizationEndpoint: "https://indieauth.com/auth",
       tokenEndpoint: "https://tokens.indieauth.com/token",
       tokenVerificationCache: 120,
     },
-    storage: { adapter: {} as ResolvedConfig["storage"]["adapter"] },
-    discovery: { enabled: true, includeHeaders: true },
+    micropub: {
+      enableDeletes: true,
+      enableUpdates: true,
+      endpoint: "/micropub",
+      mediaEndpoint: "/micropub/media",
+      syndicationTargets: [],
+    },
     security: {
-      requireScope: true,
+      allowedMimeTypes: ["image/jpeg"],
       allowedOrigins: ["*"],
       maxUploadSize: 10 * 1024 * 1024,
-      allowedMimeTypes: ["image/jpeg"],
+      requireScope: true,
     },
     site: { me: "https://example.com/" },
     siteUrl: "https://example.com/",
+    storage: { adapter: {} as ResolvedConfig["storage"]["adapter"] },
     ...overrides,
   };
 }
@@ -95,10 +95,10 @@ describe("buildDiscoveryLinks", () => {
     const links = buildDiscoveryLinks(
       makeConfig({
         micropub: {
+          enableDeletes: true,
+          enableUpdates: true,
           endpoint: "/blog/micropub",
           mediaEndpoint: "/blog/micropub/media",
-          enableUpdates: true,
-          enableDeletes: true,
           syndicationTargets: [],
         },
       }),

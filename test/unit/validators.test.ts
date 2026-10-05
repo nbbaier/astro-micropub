@@ -18,10 +18,10 @@ import {
 describe("validateMicropubCreate", () => {
   it("should validate a valid MF2 entry", () => {
     const entry = {
-      type: ["h-entry"],
       properties: {
         content: ["Hello World"],
       },
+      type: ["h-entry"],
     };
 
     const result = validateMicropubCreate(entry);
@@ -40,10 +40,10 @@ describe("validateMicropubCreate", () => {
 
   it("should throw on empty type array", () => {
     const entry = {
-      type: [],
       properties: {
         content: ["Hello"],
       },
+      type: [],
     };
 
     expect(() => validateMicropubCreate(entry)).toThrow();
@@ -51,13 +51,13 @@ describe("validateMicropubCreate", () => {
 
   it("should validate complex entries", () => {
     const entry = {
-      type: ["h-entry"],
       properties: {
-        name: ["My Post"],
-        content: ["This is content"],
         category: ["web", "indieweb"],
+        content: ["This is content"],
+        name: ["My Post"],
         published: ["2024-01-01T00:00:00Z"],
       },
+      type: ["h-entry"],
     };
 
     const result = validateMicropubCreate(entry);
@@ -69,10 +69,10 @@ describe("validateMicropubAction", () => {
   it("should validate update action", () => {
     const action = {
       action: "update",
-      url: "https://example.com/post",
       replace: {
         content: ["Updated content"],
       },
+      url: "https://example.com/post",
     };
 
     const result = validateMicropubAction(action);
@@ -122,10 +122,10 @@ describe("convertToUpdateOperations", () => {
   it("should convert replace operations", () => {
     const update = {
       action: "update" as const,
-      url: "https://example.com/post",
       replace: {
         content: ["New content"],
       },
+      url: "https://example.com/post",
     };
 
     const ops = convertToUpdateOperations(update);
@@ -141,10 +141,10 @@ describe("convertToUpdateOperations", () => {
   it("should convert add operations", () => {
     const update = {
       action: "update" as const,
-      url: "https://example.com/post",
       add: {
         category: ["new-tag"],
       },
+      url: "https://example.com/post",
     };
 
     const ops = convertToUpdateOperations(update);
@@ -160,8 +160,8 @@ describe("convertToUpdateOperations", () => {
   it("should convert delete operations (array form)", () => {
     const update = {
       action: "update" as const,
-      url: "https://example.com/post",
       delete: ["syndication"],
+      url: "https://example.com/post",
     };
 
     const ops = convertToUpdateOperations(update);
@@ -176,10 +176,10 @@ describe("convertToUpdateOperations", () => {
   it("should convert delete operations (object form)", () => {
     const update = {
       action: "update" as const,
-      url: "https://example.com/post",
       delete: {
         category: ["old-tag"],
       },
+      url: "https://example.com/post",
     };
 
     const ops = convertToUpdateOperations(update);
@@ -195,14 +195,14 @@ describe("convertToUpdateOperations", () => {
   it("should handle combined operations", () => {
     const update = {
       action: "update" as const,
-      url: "https://example.com/post",
-      replace: {
-        content: ["Updated"],
-      },
       add: {
         category: ["new"],
       },
       delete: ["syndication"],
+      replace: {
+        content: ["Updated"],
+      },
+      url: "https://example.com/post",
     };
 
     const ops = convertToUpdateOperations(update);

@@ -4,18 +4,18 @@ import { z } from "astro/zod";
  * Syndication target schema
  */
 export const syndicationTargetSchema = z.object({
-  uid: z.string().url(),
   name: z.string(),
+  uid: z.string().url(),
 });
 
 /**
  * Micropub configuration schema
  */
 export const micropubConfigSchema = z.object({
+  enableDeletes: z.boolean().default(true),
+  enableUpdates: z.boolean().default(true),
   endpoint: z.string().default("/micropub"),
   mediaEndpoint: z.string().default("/micropub/media"),
-  enableUpdates: z.boolean().default(true),
-  enableDeletes: z.boolean().default(true),
   syndicationTargets: z.array(syndicationTargetSchema).default([]),
 });
 
@@ -40,23 +40,17 @@ export const discoveryConfigSchema = z.object({
  * Rate limit configuration schema
  */
 export const rateLimitConfigSchema = z.object({
+  maxRequests: z.number().positive().default(100),
   windowMs: z
     .number()
     .positive()
     .default(15 * 60 * 1000), // 15 minutes
-  maxRequests: z.number().positive().default(100),
 });
 
 /**
  * Security configuration schema
  */
 export const securityConfigSchema = z.object({
-  requireScope: z.boolean().default(true),
-  allowedOrigins: z.array(z.string()).default(["*"]),
-  maxUploadSize: z
-    .number()
-    .positive()
-    .default(10 * 1024 * 1024), // 10 MB
   allowedMimeTypes: z.array(z.string()).default([
     "image/jpeg",
     "image/png",
@@ -64,7 +58,13 @@ export const securityConfigSchema = z.object({
     "image/webp",
     // Note: SVG excluded by default due to XSS risk (can contain JavaScript)
   ]),
+  allowedOrigins: z.array(z.string()).default(["*"]),
+  maxUploadSize: z
+    .number()
+    .positive()
+    .default(10 * 1024 * 1024), // 10 MB
   rateLimit: rateLimitConfigSchema.optional(),
+  requireScope: z.boolean().default(true),
   sanitizeHtml: z
     .custom<(input: string) => string>((v) => typeof v === "function")
     .optional(),
@@ -83,38 +83,38 @@ export const siteAuthorSchema = z.object({
  * Site configuration schema
  */
 export const siteConfigSchema = z.object({
+  author: siteAuthorSchema.optional(),
   me: z.string().url(),
   name: z.string().optional(),
-  author: siteAuthorSchema.optional(),
 });
 
 /**
  * Complete integration configuration schema
  */
 export const astroMicropubConfigSchema = z.object({
-  micropub: micropubConfigSchema.optional().default(() => ({
-    endpoint: "/micropub",
-    mediaEndpoint: "/micropub/media",
-    enableUpdates: true,
-    enableDeletes: true,
-    syndicationTargets: [],
-  })),
-  indieauth: indieAuthConfigSchema,
-  storage: z.object({
-    adapter: z.any(), // MicropubStorageAdapter - validated at runtime
-    mediaAdapter: z.any().optional(), // MediaStorageAdapter - validated at runtime
-  }),
   discovery: discoveryConfigSchema.optional().default(() => ({
     enabled: true,
     includeHeaders: true,
   })),
+  indieauth: indieAuthConfigSchema,
+  micropub: micropubConfigSchema.optional().default(() => ({
+    enableDeletes: true,
+    enableUpdates: true,
+    endpoint: "/micropub",
+    mediaEndpoint: "/micropub/media",
+    syndicationTargets: [],
+  })),
   security: securityConfigSchema.optional().default(() => ({
-    requireScope: true,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
     allowedOrigins: ["*"],
     maxUploadSize: 10 * 1024 * 1024,
-    allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+    requireScope: true,
   })),
   site: siteConfigSchema,
+  storage: z.object({
+    adapter: z.any(), // MicropubStorageAdapter - validated at runtime
+    mediaAdapter: z.any().optional(), // MediaStorageAdapter - validated at runtime
+  }),
 });
 
 /**

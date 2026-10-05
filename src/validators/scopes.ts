@@ -3,10 +3,10 @@
  */
 export const MICROPUB_SCOPES = {
   CREATE: "create",
-  UPDATE: "update",
   DELETE: "delete",
-  MEDIA: "media",
   DRAFT: "draft",
+  MEDIA: "media",
+  UPDATE: "update",
 } as const;
 
 /**

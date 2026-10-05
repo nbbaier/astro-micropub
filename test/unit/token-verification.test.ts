@@ -67,12 +67,12 @@ describe("verifyToken", () => {
   it("should verify valid token with endpoint", async () => {
     // Mock fetch
     global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
       json: async () => ({
-        me: "https://user.example.com/",
         client_id: "https://client.example.com/",
+        me: "https://user.example.com/",
         scope: "create update",
       }),
+      ok: true,
     });
 
     const result = await verifyToken(
@@ -82,20 +82,20 @@ describe("verifyToken", () => {
 
     expect(result).toEqual({
       active: true,
-      me: "https://user.example.com/",
       client_id: "https://client.example.com/",
-      scope: "create update",
       exp: undefined,
+      me: "https://user.example.com/",
+      scope: "create update",
     });
 
     expect(fetch).toHaveBeenCalledWith(
       "https://tokens.example.com/token",
       expect.objectContaining({
-        method: "GET",
         headers: {
-          Authorization: "Bearer test-token",
           Accept: "application/json",
+          Authorization: "Bearer test-token",
         },
+        method: "GET",
       })
     );
   });
@@ -115,11 +115,11 @@ describe("verifyToken", () => {
 
   it("should return null when response missing required fields", async () => {
     global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
       json: async () => ({
         // Missing 'me' and 'scope'
         client_id: "https://client.example.com/",
       }),
+      ok: true,
     });
 
     const result = await verifyToken(
@@ -131,12 +131,12 @@ describe("verifyToken", () => {
 
   it("should cache verification results", async () => {
     global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
       json: async () => ({
-        me: "https://user.example.com/",
         client_id: "https://client.example.com/",
+        me: "https://user.example.com/",
         scope: "create",
       }),
+      ok: true,
     });
 
     // First call
@@ -150,13 +150,13 @@ describe("verifyToken", () => {
 
   it("should handle token expiry", async () => {
     global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
       json: async () => ({
-        me: "https://user.example.com/",
         client_id: "https://client.example.com/",
-        scope: "create",
         exp: Math.floor(Date.now() / 1000) - 100, // Expired
+        me: "https://user.example.com/",
+        scope: "create",
       }),
+      ok: true,
     });
 
     const result = await verifyToken(
@@ -195,12 +195,12 @@ describe("withAuth", () => {
 
   it("should return authorized with valid token", async () => {
     global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
       json: async () => ({
-        me: "https://user.example.com/",
         client_id: "https://client.example.com/",
+        me: "https://user.example.com/",
         scope: "create update",
       }),
+      ok: true,
     });
 
     const request = new Request("https://example.com", {
@@ -214,10 +214,10 @@ describe("withAuth", () => {
     expect(result.authorized).toBe(true);
     expect(result.verification).toEqual({
       active: true,
-      me: "https://user.example.com/",
       client_id: "https://client.example.com/",
-      scope: "create update",
       exp: undefined,
+      me: "https://user.example.com/",
+      scope: "create update",
     });
   });
 

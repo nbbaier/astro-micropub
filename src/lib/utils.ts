@@ -41,24 +41,17 @@ export async function generateSafeFilename(file: File): Promise<string> {
  * Ensure a URL is absolute
  */
 export function ensureAbsoluteUrl(url: string, baseUrl: string): string {
-  try {
-    new URL(url); // If this doesn't throw, it's already absolute
+  if (URL.canParse(url)) {
     return url;
-  } catch {
-    return new URL(url, baseUrl).toString();
   }
+  return new URL(url, baseUrl).toString();
 }
 
 /**
  * Validate that a URL is absolute
  */
 export function isAbsoluteUrl(url: string): boolean {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
+  return URL.canParse(url);
 }
 
 /**
@@ -106,11 +99,11 @@ export function createAuthError(
   const origin = getCorsOrigin(requestOrigin ?? null, allowedOrigins);
 
   return new Response(null, {
-    status,
     headers: {
-      "WWW-Authenticate": wwwAuthenticate,
       "Access-Control-Allow-Origin": origin,
+      "WWW-Authenticate": wwwAuthenticate,
     },
+    status,
   });
 }
 
@@ -132,11 +125,11 @@ export function createErrorResponse(
   const origin = getCorsOrigin(requestOrigin ?? null, allowedOrigins);
 
   return new Response(JSON.stringify(body), {
-    status,
     headers: {
-      "Content-Type": "application/json",
       "Access-Control-Allow-Origin": origin,
+      "Content-Type": "application/json",
     },
+    status,
   });
 }
 
@@ -160,9 +153,9 @@ export function addCorsHeaders(
   }
 
   return new Response(response.body, {
+    headers,
     status: response.status,
     statusText: response.statusText,
-    headers,
   });
 }
 
@@ -176,14 +169,14 @@ export function createCorsPreflightResponse(
   const origin = getCorsOrigin(requestOrigin ?? null, allowedOrigins);
 
   return new Response(null, {
-    status: 204,
     headers: {
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Authorization, Content-Type",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Origin": origin,
       "Access-Control-Max-Age": "86400", // 24 hours
       ...(origin !== "*" && { "Access-Control-Allow-Credentials": "true" }),
     },
+    status: 204,
   });
 }
 
@@ -191,5 +184,10 @@ export function createCorsPreflightResponse(
  * Get runtime configuration injected by Vite
  */
 export function getRuntimeConfig(): ResolvedConfig {
-  return __MICROPUB_CONFIG__ ?? ({} as ResolvedConfig);
+  if (!__MICROPUB_CONFIG__) {
+    throw new Error(
+      "Micropub config not found. Is the astro-micropub integration registered?"
+    );
+  }
+  return __MICROPUB_CONFIG__;
 }

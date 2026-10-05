@@ -66,10 +66,10 @@ export function buildDiscoveryLinks(
   const { micropub, indieauth, discovery, siteUrl } = config;
 
   return {
+    authorizationEndpoint: indieauth.authorizationEndpoint,
     enabled: discovery.enabled,
     micropub: toAbsolute(micropub.endpoint, siteUrl, base),
     micropubMedia: toAbsolute(micropub.mediaEndpoint, siteUrl, base),
-    authorizationEndpoint: indieauth.authorizationEndpoint,
     tokenEndpoint: indieauth.tokenEndpoint,
   };
 }

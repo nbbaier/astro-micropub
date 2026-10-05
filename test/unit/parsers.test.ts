@@ -5,8 +5,8 @@ describe("parseFormEncoded", () => {
   it("should parse simple form data", () => {
     const result = parseFormEncoded("h=entry&content=Hello+World");
     expect(result).toEqual({
-      h: "entry",
       content: "Hello World",
+      h: "entry",
     });
   });
 
@@ -24,9 +24,9 @@ describe("parseFormEncoded", () => {
       "h=entry&content=Test&category[]=web&category[]=indieweb"
     );
     expect(result).toEqual({
-      h: "entry",
-      content: "Test",
       category: ["web", "indieweb"],
+      content: "Test",
+      h: "entry",
     });
   });
 
@@ -50,8 +50,8 @@ describe("parseFormEncoded", () => {
   it("should handle empty values", () => {
     const result = parseFormEncoded("h=entry&content=");
     expect(result).toEqual({
-      h: "entry",
       content: "",
+      h: "entry",
     });
   });
 });
@@ -59,62 +59,62 @@ describe("parseFormEncoded", () => {
 describe("formToMicroformats", () => {
   it("should convert simple form data to MF2", () => {
     const result = formToMicroformats({
-      h: "entry",
       content: "Hello World",
+      h: "entry",
     });
 
     expect(result).toEqual({
-      type: ["h-entry"],
       properties: {
         content: ["Hello World"],
       },
+      type: ["h-entry"],
     });
   });
 
   it("should handle arrays in properties", () => {
     const result = formToMicroformats({
-      h: "entry",
-      content: "Test post",
       category: ["foo", "bar"],
+      content: "Test post",
+      h: "entry",
     });
 
     expect(result).toEqual({
-      type: ["h-entry"],
       properties: {
-        content: ["Test post"],
         category: ["foo", "bar"],
+        content: ["Test post"],
       },
+      type: ["h-entry"],
     });
   });
 
   it("should skip h and action fields", () => {
     const result = formToMicroformats({
-      h: "entry",
       action: "create",
       content: "Test",
+      h: "entry",
     });
 
     expect(result).toEqual({
-      type: ["h-entry"],
       properties: {
         content: ["Test"],
       },
+      type: ["h-entry"],
     });
   });
 
   it("should convert scalar values to arrays", () => {
     const result = formToMicroformats({
+      content: "Post content",
       h: "entry",
       name: "Post Title",
-      content: "Post content",
     });
 
     expect(result).toEqual({
-      type: ["h-entry"],
       properties: {
-        name: ["Post Title"],
         content: ["Post content"],
+        name: ["Post Title"],
       },
+      type: ["h-entry"],
     });
   });
 
@@ -133,10 +133,10 @@ describe("formToMicroformats", () => {
     });
 
     expect(result).toEqual({
-      type: ["h-event"],
       properties: {
         name: ["My Event"],
       },
+      type: ["h-event"],
     });
   });
 });

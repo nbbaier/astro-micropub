@@ -17,8 +17,8 @@ describe("DevFSAdapter", () => {
 
   beforeEach(async () => {
     // Clean up test directories
-    await fs.rm(TEST_DIR, { recursive: true, force: true });
-    await fs.rm(TEST_MEDIA_DIR, { recursive: true, force: true });
+    await fs.rm(TEST_DIR, { force: true, recursive: true });
+    await fs.rm(TEST_MEDIA_DIR, { force: true, recursive: true });
 
     adapter = new DevFSAdapter({
       contentDir: TEST_DIR,
@@ -29,18 +29,18 @@ describe("DevFSAdapter", () => {
 
   afterEach(async () => {
     // Clean up after tests
-    await fs.rm(TEST_DIR, { recursive: true, force: true });
-    await fs.rm(TEST_MEDIA_DIR, { recursive: true, force: true });
+    await fs.rm(TEST_DIR, { force: true, recursive: true });
+    await fs.rm(TEST_MEDIA_DIR, { force: true, recursive: true });
   });
 
   describe("createPost", () => {
     it("should create a simple text post", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
           content: ["Hello World"],
           published: ["2024-01-01T12:00:00Z"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -56,11 +56,11 @@ describe("DevFSAdapter", () => {
 
     it("should create a post with custom slug", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
           content: ["Test post"],
           "mp-slug": ["my-custom-slug"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -74,11 +74,11 @@ describe("DevFSAdapter", () => {
 
     it("should generate slug from name", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          name: ["My Blog Post"],
           content: ["Content here"],
+          name: ["My Blog Post"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -88,19 +88,19 @@ describe("DevFSAdapter", () => {
 
     it("should handle slug collisions", async () => {
       const entry1: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          name: ["Test Post"],
           content: ["First post"],
+          name: ["Test Post"],
         },
+        type: ["h-entry"],
       };
 
       const entry2: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          name: ["Test Post"],
           content: ["Second post"],
+          name: ["Test Post"],
         },
+        type: ["h-entry"],
       };
 
       const metadata1 = await adapter.createPost(entry1);
@@ -112,13 +112,13 @@ describe("DevFSAdapter", () => {
 
     it("should preserve frontmatter properties", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          name: ["My Post"],
-          content: ["Content"],
           category: ["web", "indieweb"],
+          content: ["Content"],
+          name: ["My Post"],
           published: ["2024-01-01T12:00:00Z"],
         },
+        type: ["h-entry"],
       };
 
       const _metadata = await adapter.createPost(entry);
@@ -135,12 +135,12 @@ describe("DevFSAdapter", () => {
 
     it("should handle photo properties with alt text", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
           content: ["Photo post"],
-          photo: ["https://example.com/photo.jpg"],
           "mp-photo-alt": ["A beautiful sunset"],
+          photo: ["https://example.com/photo.jpg"],
         },
+        type: ["h-entry"],
       };
 
       await adapter.createPost(entry);
@@ -155,11 +155,11 @@ describe("DevFSAdapter", () => {
 
     it("should handle draft status", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
           content: ["Draft post"],
           "post-status": ["draft"],
         },
+        type: ["h-entry"],
       };
 
       await adapter.createPost(entry);
@@ -174,11 +174,11 @@ describe("DevFSAdapter", () => {
   describe("getPost", () => {
     it("should retrieve a post by URL", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          name: ["Test Post"],
           content: ["Test content"],
+          name: ["Test Post"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -199,12 +199,12 @@ describe("DevFSAdapter", () => {
 
     it("should filter properties when requested", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          name: ["Test"],
-          content: ["Content"],
           category: ["web"],
+          content: ["Content"],
+          name: ["Test"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -222,11 +222,11 @@ describe("DevFSAdapter", () => {
   describe("updatePost", () => {
     it("should replace properties", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          name: ["Original"],
           content: ["Original content"],
+          name: ["Original"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -246,11 +246,11 @@ describe("DevFSAdapter", () => {
 
     it("should add values to properties", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          content: ["Test"],
           category: ["web"],
+          content: ["Test"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -269,11 +269,11 @@ describe("DevFSAdapter", () => {
 
     it("should delete entire properties", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          content: ["Test"],
           category: ["web"],
+          content: ["Test"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -291,11 +291,11 @@ describe("DevFSAdapter", () => {
 
     it("should delete specific values from properties", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
-          content: ["Test"],
           category: ["web", "indieweb", "blog"],
+          content: ["Test"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -314,10 +314,10 @@ describe("DevFSAdapter", () => {
 
     it("should add updated timestamp", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
           content: ["Test"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -338,10 +338,10 @@ describe("DevFSAdapter", () => {
   describe("deletePost", () => {
     it("should soft delete a post", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
           content: ["Test"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);
@@ -355,10 +355,10 @@ describe("DevFSAdapter", () => {
   describe("undeletePost", () => {
     it("should restore a deleted post", async () => {
       const entry: MicroformatsEntry = {
-        type: ["h-entry"],
         properties: {
           content: ["Test"],
         },
+        type: ["h-entry"],
       };
 
       const metadata = await adapter.createPost(entry);

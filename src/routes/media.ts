@@ -34,7 +34,7 @@ export const OPTIONS: APIRoute = ({ request }) => {
   const config = getRuntimeConfig();
   const requestOrigin = request.headers.get("origin");
   return createCorsPreflightResponse(
-    config.security?.allowedOrigins,
+    config.security.allowedOrigins,
     requestOrigin
   );
 };
@@ -60,13 +60,13 @@ export const POST: APIRoute = async ({ request }) => {
       undefined,
       undefined,
       requestOrigin,
-      config.security?.allowedOrigins
+      config.security.allowedOrigins
     );
   }
 
   // Check for media scope (STRICT - media scope is required, not just create)
   if (
-    config.security?.requireScope &&
+    config.security.requireScope &&
     !hasScope(auth.verification.scope, "media")
   ) {
     return createAuthError(
@@ -75,7 +75,7 @@ export const POST: APIRoute = async ({ request }) => {
       undefined,
       "media",
       requestOrigin,
-      config.security?.allowedOrigins
+      config.security.allowedOrigins
     );
   }
 
@@ -87,13 +87,13 @@ export const POST: APIRoute = async ({ request }) => {
     if (!file) {
       return addCorsHeaders(
         createErrorResponse(400, "invalid_request", "No file provided"),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
 
     // Validate file size
-    const maxSize = config.security?.maxUploadSize || 10 * 1024 * 1024;
+    const maxSize = config.security.maxUploadSize;
     if (file.size > maxSize) {
       return addCorsHeaders(
         createErrorResponse(
@@ -101,27 +101,20 @@ export const POST: APIRoute = async ({ request }) => {
           "invalid_request",
           `File exceeds maximum size of ${maxSize} bytes`
         ),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
 
     // Validate file type (SVG excluded by default due to XSS risk)
-    const allowedTypes = config.security?.allowedMimeTypes || [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
+    if (!config.security.allowedMimeTypes.includes(file.type)) {
       return addCorsHeaders(
         createErrorResponse(
           415,
           "invalid_request",
           `File type ${file.type} is not allowed`
         ),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
@@ -139,7 +132,7 @@ export const POST: APIRoute = async ({ request }) => {
           "server_error",
           "Media storage not configured"
         ),
-        config.security?.allowedOrigins,
+        config.security.allowedOrigins,
         requestOrigin
       );
     }
@@ -150,18 +143,18 @@ export const POST: APIRoute = async ({ request }) => {
     // Return 201 Created with Location header
     return addCorsHeaders(
       new Response(null, {
-        status: 201,
         headers: {
           Location: absoluteUrl,
         },
+        status: 201,
       }),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   } catch {
     return addCorsHeaders(
       createErrorResponse(500, "server_error", "Failed to upload file"),
-      config.security?.allowedOrigins,
+      config.security.allowedOrigins,
       requestOrigin
     );
   }

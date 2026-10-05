@@ -15,7 +15,7 @@ class TokenCache {
     ttlSeconds: number
   ): void {
     const expiry = Date.now() + ttlSeconds * 1000;
-    this.cache.set(token, { result, expiry });
+    this.cache.set(token, { expiry, result });
 
     // Auto-cleanup after TTL
     setTimeout(() => {
@@ -94,11 +94,11 @@ export async function verifyToken(
 
     // Verify with IndieAuth token endpoint
     const response = await fetch(tokenEndpoint, {
-      method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
         Accept: "application/json",
+        Authorization: `Bearer ${token}`,
       },
+      method: "GET",
       signal: controller.signal,
     });
 
@@ -117,10 +117,10 @@ export async function verifyToken(
 
     const result: TokenVerificationResult = {
       active: true,
-      me: data.me as string,
       client_id: (data.client_id as string) || "",
-      scope: data.scope as string,
       exp: data.exp as number | undefined,
+      me: data.me as string,
+      scope: data.scope as string,
     };
 
     // Check if token is already expired
