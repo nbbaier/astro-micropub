@@ -2,6 +2,19 @@
   "name": "astro-micropub",
   "version": "0.1.0",
   "description": "A production-ready Micropub resource server integration for Astro",
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "micropub",
+    "indieweb",
+    "indieauth"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/astro-micropub.git"
+  },
+  "license": "MIT",
+  "author": "",
   "type": "module",
   "exports": {
     ".": "./dist/integration.js",
@@ -19,46 +32,33 @@
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage",
     "check": "ultracite check",
+    "dev": "tsc --watch",
     "fix": "ultracite fix",
     "prepublishOnly": "bun run build",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch",
     "typecheck": "tsgo --noEmit"
-  },
-  "keywords": [
-    "astro",
-    "astro-integration",
-    "micropub",
-    "indieweb",
-    "indieauth"
-  ],
-  "author": "",
-  "license": "MIT",
-  "peerDependencies": {
-    "astro": "^4.14.0 || ^5.0.0 || ^6.0.0"
   },
   "dependencies": {
     "busboy": "^1.6.0",
     "gray-matter": "^4.0.3",
-    "slugify": "^1.6.8",
-    "zod": "^4.3.6"
+    "slugify": "^1.6.9",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.9",
+    "@biomejs/biome": "2.5.15",
     "@types/busboy": "^1.5.4",
-    "@types/node": "^25.5.0",
-    "@vitest/coverage-v8": "^5.0.0",
-    "astro": "^6.1.1",
-    "typescript": "^6.0.2",
-    "ultracite": "7.3.2",
-    "vite": "^8.0.3",
-    "vitest": "^5.0.0"
+    "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^5.0.3",
+    "astro": "^7.3.5",
+    "typescript": "^7.0.2",
+    "ultracite": "7.12.4",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/astro-micropub.git"
+  "peerDependencies": {
+    "astro": "^4.14.0 || ^5.0.0 || ^6.0.0"
   }
 }
