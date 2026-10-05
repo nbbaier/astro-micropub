@@ -1,7 +1,7 @@
 /**
  * Micropub scopes as defined in the spec
  */
-export const MICROPUB_SCOPES = {
+const MICROPUB_SCOPES = {
   CREATE: "create",
   DELETE: "delete",
   DRAFT: "draft",

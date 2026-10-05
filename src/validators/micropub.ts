@@ -1,38 +1,9 @@
 import { z } from "astro/zod";
 
 /**
- * Microformats2 entry schema
- */
-export const microformatsEntrySchema = z.object({
-  properties: z.record(z.string(), z.array(z.any())),
-  type: z.array(z.string()).min(1),
-});
-
-/**
- * Update operation schema
- */
-export const updateOperationSchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.literal("replace"),
-    property: z.string(),
-    value: z.array(z.any()),
-  }),
-  z.object({
-    action: z.literal("add"),
-    property: z.string(),
-    value: z.array(z.any()),
-  }),
-  z.object({
-    action: z.literal("delete"),
-    property: z.string(),
-    value: z.array(z.any()).optional(),
-  }),
-]);
-
-/**
  * Micropub create request schema (JSON)
  */
-export const micropubCreateSchema = z.object({
+const micropubCreateSchema = z.object({
   properties: z.record(z.string(), z.array(z.any())),
   type: z.array(z.string()).min(1),
 });
@@ -56,7 +27,7 @@ export const micropubUpdateSchema = z.object({
 /**
  * Micropub delete request schema
  */
-export const micropubDeleteSchema = z.object({
+const micropubDeleteSchema = z.object({
   action: z.literal("delete"),
   url: z.string().url(),
 });
@@ -64,7 +35,7 @@ export const micropubDeleteSchema = z.object({
 /**
  * Micropub undelete request schema
  */
-export const micropubUndeleteSchema = z.object({
+const micropubUndeleteSchema = z.object({
   action: z.literal("undelete"),
   url: z.string().url(),
 });
@@ -72,7 +43,7 @@ export const micropubUndeleteSchema = z.object({
 /**
  * Micropub action request schema (update/delete/undelete)
  */
-export const micropubActionSchema = z.discriminatedUnion("action", [
+const micropubActionSchema = z.discriminatedUnion("action", [
   micropubUpdateSchema,
   micropubDeleteSchema,
   micropubUndeleteSchema,

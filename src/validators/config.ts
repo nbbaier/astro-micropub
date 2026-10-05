@@ -3,7 +3,7 @@ import { z } from "astro/zod";
 /**
  * Syndication target schema
  */
-export const syndicationTargetSchema = z.object({
+const syndicationTargetSchema = z.object({
   name: z.string(),
   uid: z.string().url(),
 });
@@ -11,7 +11,7 @@ export const syndicationTargetSchema = z.object({
 /**
  * Micropub configuration schema
  */
-export const micropubConfigSchema = z.object({
+const micropubConfigSchema = z.object({
   enableDeletes: z.boolean().default(true),
   enableUpdates: z.boolean().default(true),
   endpoint: z.string().default("/micropub"),
@@ -22,7 +22,7 @@ export const micropubConfigSchema = z.object({
 /**
  * IndieAuth configuration schema
  */
-export const indieAuthConfigSchema = z.object({
+const indieAuthConfigSchema = z.object({
   authorizationEndpoint: z.string().url(),
   tokenEndpoint: z.string().url(),
   tokenVerificationCache: z.number().min(0).max(3600).default(120),
@@ -31,7 +31,7 @@ export const indieAuthConfigSchema = z.object({
 /**
  * Discovery configuration schema
  */
-export const discoveryConfigSchema = z.object({
+const discoveryConfigSchema = z.object({
   enabled: z.boolean().default(true),
   includeHeaders: z.boolean().default(true),
 });
@@ -39,7 +39,7 @@ export const discoveryConfigSchema = z.object({
 /**
  * Rate limit configuration schema
  */
-export const rateLimitConfigSchema = z.object({
+const rateLimitConfigSchema = z.object({
   maxRequests: z.number().positive().default(100),
   windowMs: z
     .number()
@@ -50,7 +50,7 @@ export const rateLimitConfigSchema = z.object({
 /**
  * Security configuration schema
  */
-export const securityConfigSchema = z.object({
+const securityConfigSchema = z.object({
   allowedMimeTypes: z.array(z.string()).default([
     "image/jpeg",
     "image/png",
@@ -73,7 +73,7 @@ export const securityConfigSchema = z.object({
 /**
  * Site author schema
  */
-export const siteAuthorSchema = z.object({
+const siteAuthorSchema = z.object({
   name: z.string(),
   photo: z.string().url().optional(),
   url: z.string().url().optional(),
@@ -82,7 +82,7 @@ export const siteAuthorSchema = z.object({
 /**
  * Site configuration schema
  */
-export const siteConfigSchema = z.object({
+const siteConfigSchema = z.object({
   author: siteAuthorSchema.optional(),
   me: z.string().url(),
   name: z.string().optional(),
@@ -91,7 +91,7 @@ export const siteConfigSchema = z.object({
 /**
  * Complete integration configuration schema
  */
-export const astroMicropubConfigSchema = z.object({
+const astroMicropubConfigSchema = z.object({
   discovery: discoveryConfigSchema.optional().default(() => ({
     enabled: true,
     includeHeaders: true,

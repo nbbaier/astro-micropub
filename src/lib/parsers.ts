@@ -8,7 +8,7 @@ const DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024;
 /**
  * Error thrown when a file exceeds the maximum allowed size during streaming
  */
-export class FileSizeLimitError extends Error {
+class FileSizeLimitError extends Error {
   constructor(maxSize: number) {
     super(`File exceeds maximum size limit of ${maxSize} bytes`);
     this.name = "FileSizeLimitError";
@@ -72,9 +72,7 @@ export function formToMicroformats(
 /**
  * Parse JSON request body
  */
-export async function parseJSON(
-  request: Request
-): Promise<Record<string, unknown>> {
+async function parseJSON(request: Request): Promise<Record<string, unknown>> {
   try {
     return (await request.json()) as Record<string, unknown>;
   } catch (error) {
@@ -87,7 +85,7 @@ export async function parseJSON(
  * @param request - The incoming request
  * @param maxFileSize - Maximum allowed file size in bytes (default: 10MB)
  */
-export function parseMultipart(
+function parseMultipart(
   request: Request,
   maxFileSize: number = DEFAULT_MAX_FILE_SIZE
 ): Promise<{
@@ -181,7 +179,7 @@ export function parseMultipart(
 /**
  * Detect request content type
  */
-export function getContentType(request: Request): string | null {
+function getContentType(request: Request): string | null {
   const contentType = request.headers.get("content-type");
   if (!contentType) {
     return null;

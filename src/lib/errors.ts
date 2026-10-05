@@ -6,7 +6,7 @@
 /**
  * Base class for Micropub errors
  */
-export class MicropubError extends Error {
+class MicropubError extends Error {
   readonly code: string;
 
   constructor(message: string, code: string) {
@@ -37,43 +37,8 @@ export class UrlOwnershipError extends MicropubError {
 }
 
 /**
- * Error thrown for invalid request data
- */
-export class InvalidRequestError extends MicropubError {
-  constructor(message = "Invalid request") {
-    super(message, "invalid_request");
-    this.name = "InvalidRequestError";
-  }
-}
-
-/**
  * Type guard to check if an error is a NotFoundError
  */
 export function isNotFoundError(error: unknown): error is NotFoundError {
   return error instanceof NotFoundError;
-}
-
-/**
- * Type guard to check if an error is a UrlOwnershipError
- */
-export function isUrlOwnershipError(
-  error: unknown
-): error is UrlOwnershipError {
-  return error instanceof UrlOwnershipError;
-}
-
-/**
- * Type guard to check if an error is an InvalidRequestError
- */
-export function isInvalidRequestError(
-  error: unknown
-): error is InvalidRequestError {
-  return error instanceof InvalidRequestError;
-}
-
-/**
- * Type guard to check if an error is any MicropubError
- */
-export function isMicropubError(error: unknown): error is MicropubError {
-  return error instanceof MicropubError;
 }

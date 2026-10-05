@@ -8,7 +8,6 @@
         "busboy": "^1.6.0",
         "gray-matter": "^4.0.3",
         "slugify": "^1.6.9",
-        "zod": "^4.6.5",
       },
       "devDependencies": {
         "@biomejs/biome": "2.5.15",

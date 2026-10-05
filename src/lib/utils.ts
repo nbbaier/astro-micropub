@@ -38,16 +38,6 @@ export async function generateSafeFilename(file: File): Promise<string> {
 }
 
 /**
- * Ensure a URL is absolute
- */
-export function ensureAbsoluteUrl(url: string, baseUrl: string): string {
-  if (URL.canParse(url)) {
-    return url;
-  }
-  return new URL(url, baseUrl).toString();
-}
-
-/**
  * Validate that a URL is absolute
  */
 export function isAbsoluteUrl(url: string): boolean {
@@ -57,7 +47,7 @@ export function isAbsoluteUrl(url: string): boolean {
 /**
  * Get the appropriate CORS origin based on the request origin and allowed origins list
  */
-export function getCorsOrigin(
+function getCorsOrigin(
   requestOrigin: string | null,
   allowedOrigins: string[] = ["*"]
 ): string {
